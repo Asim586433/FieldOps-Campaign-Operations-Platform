@@ -109,7 +109,6 @@
     .cell-primary{font-weight:600;color:var(--gray-900)}
     .cell-sub{font-size:11.5px;color:var(--gray-500);margin-top:1px}
     .table-toolbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--gray-100);flex-wrap:wrap}
-    .table-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--gray-100);flex-wrap:wrap;gap:10px}
     .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .filter-bar select,.filter-bar input{width:auto;min-width:120px;padding:7px 10px;font-size:12.5px;border-radius:8px;border:1px solid var(--gray-300);background:#fff}
     .modal-overlay{position:fixed;inset:0;background:rgba(15,20,35,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;backdrop-filter:blur(1px)}
@@ -133,16 +132,15 @@
     .qa-btn.success svg{color:var(--green-600)}
     .qa-btn.danger:hover{border-color:var(--red-600);background:var(--red-100)}
     .qa-btn.danger svg{color:var(--red-600)}
-    .status-selector{display:flex;gap:6px;flex-wrap:wrap}
-    .status-selector .badge{cursor:pointer;padding:4px 12px;font-size:12px}
-    .status-selector .badge:hover{opacity:.7}
-    .status-selector .badge.active{outline:2px solid var(--blue-500);outline-offset:2px}
-    .search-result{max-height:400px;overflow-y:auto}
     .street-progress{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-100)}
     .street-progress .street-name{min-width:150px;font-weight:600}
     .street-progress .progress{flex:1}
     .household-card{border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:8px}
     .household-card .voter-row{padding:4px 0;border-bottom:1px solid var(--gray-50)}
+    .contact-timeline{position:relative;padding-left:20px}
+    .contact-timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--gray-200)}
+    .contact-item{position:relative;padding-bottom:12px;padding-left:16px}
+    .contact-item::before{content:'';position:absolute;left:-6px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--blue-500);border:2px solid #fff}
   </style>
 </head>
 <body>
@@ -237,6 +235,7 @@
   const PRECINCTS={W1:['Precinct 1','Precinct 2'],W2:['Precinct 1','Precinct 2','Precinct 3'],W3:['Precinct 3','Precinct 4'],W4:['Precinct 1','Precinct 5'],W5:['Precinct 2','Precinct 6']};
   const BALLOT_STATUSES=['Ballot Requested','Application Received','Ballot Mailed','Outstanding','Voter Contacted','Voter Says Returned','Officially Returned','Ballot Issue','Rejected','Curing Needed','Completed'];
   const CANVASS_STATUSES=['Not Visited','Completed','No Answer','Follow-Up','Registration Needed','Ballot Follow-Up','Spoke With Voter','Literature Dropped','Moved','Vacant','Refused','Wrong Address'];
+  const CONTACT_RESULTS=['Called - Answered','Called - No Answer','Text Sent','Wrong Number','Disconnected','Voter Says Ballot Returned','Voter Needs Assistance','Voter Will Return Ballot','Do Not Contact'];
 
   function makeVoter(i){
     const first=FIRST[i%FIRST.length], last=LAST[(i*3+1)%LAST.length];
@@ -270,18 +269,20 @@
       voterSaysReturnedDate: ballotStatus==='Voter Says Returned' ? daysAgo(randInt(0,mailedDaysAgo-1)) : null,
       canvassStatus, assignedWorker: worker.name, lastContact: Math.random()>0.15 ? daysAgo(randInt(0,20)) : null,
       dnc: i%23===0, notes: i%7===0 ? 'Prefers evening calls after 5pm.' : '', household: Math.random()>0.6 ? 2 : 1,
-      contacts: []
+      contacts: [],
+      registrationAssisted: i%12===0 ? 'Registration Form Provided' : (i%15===0 ? 'Registration Assistance Provided' : null),
+      registrationFollowUp: i%18===0 ? 'Follow-up scheduled' : null
     };
   }
-  const VOTERS = Array.from({length:96},(_,i)=>makeVoter(i+1));
+  const VOTERS = Array.from({length:120},(_,i)=>makeVoter(i+1));
 
-  // Add contact history to some voters
+  // Add contact history to all voters
   VOTERS.forEach(v=>{
-    if(Math.random()>0.4){
-      v.contacts.push({type:'Call',result:'Answered',date:daysAgo(randInt(1,10)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:'Spoke about ballot'});
+    if(Math.random()>0.3){
+      v.contacts.push({type:'Call',result:randOf(CONTACT_RESULTS),date:daysAgo(randInt(1,10)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:''});
     }
-    if(Math.random()>0.6){
-      v.contacts.push({type:'Door',result:'Literature Dropped',date:daysAgo(randInt(1,15)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:''});
+    if(Math.random()>0.5){
+      v.contacts.push({type:'Door',result:randOf(['Literature Dropped','Spoke With Voter','No Answer','Registration Needed']),date:daysAgo(randInt(1,15)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:''});
     }
     if(Math.random()>0.7){
       v.contacts.push({type:'SMS',result:'Sent',date:daysAgo(randInt(1,8)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:'Reminder sent'});
@@ -304,7 +305,8 @@
     {id:uid('N'),title:'50 voters assigned to you',body:'New chase-list voters assigned in Ward 3.',time:daysAgo(0),read:false},
     {id:uid('N'),title:'12 voters from your list officially returned ballots',body:'Reconciliation import updated ballot statuses.',time:daysAgo(0),read:false},
     {id:uid('N'),title:'148 additional ballots returned since previous import',body:'County file IMP-1829 processed successfully.',time:daysAgo(1),read:false},
-    {id:uid('N'),title:'42 ballot records require review',body:'Unmatched rows from the latest AV return file.',time:daysAgo(1),read:true}
+    {id:uid('N'),title:'42 ballot records require review',body:'Unmatched rows from the latest AV return file.',time:daysAgo(1),read:true},
+    {id:uid('N'),title:'312 ballots mailed more than 14 days ago remain outstanding',body:'Priority chase list updated.',time:daysAgo(2),read:false}
   ];
 
   const TURFS = [
@@ -325,15 +327,15 @@
     {id:'IMP-1826',filename:'AV_Applications_Batch3.csv',type:'AV Return File',records:610,status:'Completed',date:daysAgo(8),matched:598,errors:12}
   ];
 
-  const AUDIT_LOG = [
-    {id:'A1',date:daysAgo(0),time:'3:42 PM',user:'John Smith',action:'Ballot Changed',detail:'Beverly Smith: Outstanding → Officially Returned'},
-    {id:'A2',date:daysAgo(0),time:'2:15 PM',user:'Admin John',action:'File Imported',detail:'IMP-1829 — 892 ballot records, 841 matched'},
-    {id:'A3',date:daysAgo(0),time:'11:08 AM',user:'Mary Jones',action:'Canvass Update',detail:'John Carter — Literature Dropped'},
-    {id:'A4',date:daysAgo(1),time:'5:51 PM',user:'Linda Moore',action:'Worker Assigned',detail:'Turf 3-18 assigned to David Smith'},
-    {id:'A5',date:daysAgo(1),time:'4:20 PM',user:'James Brown',action:'DNC Added',detail:'Karen White added to Do Not Contact'},
-    {id:'A6',date:daysAgo(1),time:'1:05 PM',user:'Admin John',action:'Export',detail:'Outstanding Ballots — Ward 3 (445 records)'},
-    {id:'A7',date:daysAgo(2),time:'9:30 AM',user:'Susan Blake',action:'Voter Created',detail:'Added Patricia Harris'},
-    {id:'A8',date:daysAgo(2),time:'8:02 AM',user:'Admin John',action:'Settings Changed',detail:'Updated Ballot Chase Queue rule'}
+  let AUDIT_LOG = [
+    {id:'A1',date:daysAgo(0),time:'3:42 PM',user:'John Smith',action:'Ballot Returned',detail:'Beverly Smith: Outstanding → Officially Returned (Entered by: John Smith)'},
+    {id:'A2',date:daysAgo(0),time:'2:15 PM',user:'Admin John',action:'Reconciliation',detail:'IMP-1829 — 892 records, 841 matched, 31 already returned, 20 errors'},
+    {id:'A3',date:daysAgo(0),time:'11:08 AM',user:'Mary Jones',action:'Canvass Update',detail:'John Carter — Literature Dropped (Door contact)'},
+    {id:'A4',date:daysAgo(1),time:'5:51 PM',user:'Linda Moore',action:'Turf Assignment',detail:'Turf 3-18 assigned to David Smith (142 addresses)'},
+    {id:'A5',date:daysAgo(1),time:'4:20 PM',user:'James Brown',action:'DNC Added',detail:'Karen White added to Do Not Contact list'},
+    {id:'A6',date:daysAgo(1),time:'1:05 PM',user:'Admin John',action:'Export',detail:'Outstanding Ballots — Ward 3 (445 records exported)'},
+    {id:'A7',date:daysAgo(2),time:'9:30 AM',user:'Susan Blake',action:'Voter Created',detail:'Added Patricia Harris to database'},
+    {id:'A8',date:daysAgo(2),time:'8:02 AM',user:'Admin John',action:'Settings',detail:'Updated Ballot Chase Queue automation rule'}
   ];
 
   // ============================================================
@@ -350,7 +352,8 @@
       {label:'Team', key:'team', icon:'team'},
       {label:'Tasks', key:'tasks', icon:'tasks', badge:'4'},
       {label:'Imports', key:'imports', icon:'imports'},
-      {label:'Chase List', key:'chase', icon:'reports', badge:'445'},
+      {label:'Chase List', key:'chase', icon:'reports', badge:'312'},
+      {label:'Field Ops', key:'fieldops', icon:'field'},
       {label:'Settings', key:'settings', icon:'settings'}
     ];
     let html = `<div class="sb-brand"><div class="sb-brand-mark">RV</div><div class="sb-brand-text">ReturnVote<small>Campaign Operations</small></div></div>
@@ -396,12 +399,26 @@
 
   function globalSearch(query){
     if(!query||query.length<2){toast('Please enter at least 2 characters');return;}
+    // Check if it's a street search
+    const streetMatch = STREETS.find(s=>s.toLowerCase().includes(query.toLowerCase()));
+    if(streetMatch){
+      const results = VOTERS.filter(v=>v.street===streetMatch);
+      toast(`📍 ${streetMatch}: ${results.length} voters found`);
+      window.currentPage='fieldops';
+      renderPage();
+      setTimeout(()=>{
+        const rows = document.querySelectorAll('#streetTable tbody tr');
+        rows.forEach((row,i)=>{
+          if(i<results.length) row.style.background='var(--blue-50)';
+        });
+      },100);
+      return;
+    }
     const results = VOTERS.filter(v=>v.name.toLowerCase().includes(query.toLowerCase())||v.address.toLowerCase().includes(query.toLowerCase())||v.phone.includes(query)||v.voterId.toLowerCase().includes(query.toLowerCase()));
     if(results.length===0){toast('No voters found matching "'+query+'"');return;}
     toast(`Found ${results.length} voters matching "${query}"`);
     window.currentPage='voters';
     renderPage();
-    // scroll to results
     setTimeout(()=>{
       const rows = document.querySelectorAll('#voterTable tbody tr');
       rows.forEach((row,i)=>{
@@ -412,8 +429,8 @@
 
   function showNotifications(){
     const html = NOTIFICATIONS.map(n=>`
-      <div class="notif-item ${n.read?'':'unread'}" style="padding:10px 14px;border-bottom:1px solid var(--gray-100);cursor:pointer;display:flex;gap:10px">
-        ${!n.read?'<span class="notif-dot" style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);margin-top:5px;flex-shrink:0"></span>':''}
+      <div style="padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;gap:10px;${n.read?'':'background:var(--blue-50)'}">
+        ${!n.read?'<span style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);margin-top:5px;flex-shrink:0"></span>':''}
         <div><div style="font-weight:600">${n.title}</div><div style="font-size:12px;color:var(--gray-500)">${n.body}</div><div style="font-size:10px;color:var(--gray-400);margin-top:4px">${fmtDate(n.time)}</div></div>
       </div>
     `).join('');
@@ -439,6 +456,7 @@
       tasks:renderTasks,
       imports:renderImports,
       chase:renderChase,
+      fieldops:renderFieldOps,
       settings:renderSettings
     };
     const content = document.getElementById('content');
@@ -455,13 +473,14 @@
     const outstanding = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed').length;
     const tasksOpen = TASKS.filter(t=>t.status!=='Completed').length;
     const contacted = VOTERS.filter(v=>v.canvassStatus!=='Not Visited').length;
+    const vsReturned = VOTERS.filter(v=>v.ballotStatus==='Voter Says Returned').length;
     return `
       <div class="page-head"><div><div class="page-title">Dashboard</div><div class="page-sub">Campaign operations overview · Flint GOTV 2026</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Refreshing data')">${ic('clock')} Refresh</button><button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('check')} Run Reconciliation</button></div></div>
       <div class="grid grid-4">
         <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters</span><span class="kpi-icon" style="background:#e7edfd;color:#2454e0">${ic('voters')}</span></div><div class="kpi-value">${fmt(total)}</div><div class="kpi-delta up">+12 this week</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Ballots Returned</span><span class="kpi-icon" style="background:#e3f7ec;color:#0a8f5b">${ic('check')}</span></div><div class="kpi-value">${fmt(returned)}</div><div class="kpi-delta up">${Math.round(returned/total*100)}% return rate</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Outstanding</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('clock')}</span></div><div class="kpi-value">${fmt(outstanding)}</div><div class="kpi-delta down">${Math.round(outstanding/total*100)}% outstanding</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Canvassed</span><span class="kpi-icon" style="background:#efe8fd;color:#6d3fce">${ic('field')}</span></div><div class="kpi-value">${fmt(contacted)}</div><div class="kpi-delta up">${Math.round(contacted/total*100)}% contacted</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Officially Returned</span><span class="kpi-icon" style="background:#e3f7ec;color:#0a8f5b">${ic('check')}</span></div><div class="kpi-value">${fmt(returned)}</div><div class="kpi-delta up">${Math.round(returned/total*100)}%</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voter Says Returned</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('note')}</span></div><div class="kpi-value">${fmt(vsReturned)}</div><div class="kpi-delta flat">${Math.round(vsReturned/total*100)}%</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Outstanding</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('clock')}</span></div><div class="kpi-value">${fmt(outstanding)}</div><div class="kpi-delta down">${Math.round(outstanding/total*100)}%</div></div>
       </div>
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-top:14px">
         <div class="card"><div class="card-head"><span class="card-title">Recent Activity</span></div><div class="card-pad">
@@ -481,10 +500,11 @@
       <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
         <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
         <td>${v.ward}</td>
-        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':'gray'}">${v.ballotStatus}</span></td>
-        <td><span class="badge badge-${v.registration==='Registered'?'green':'red'}">${v.registration}</span></td>
+        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
+        <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
         <td>${v.assignedWorker}</td>
         <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
+        <td>${v.dnc?'🚫':''}</td>
       </tr>
     `).join('');
     return `
@@ -493,9 +513,10 @@
         <select id="filterWard" onchange="filterVoters()"><option value="">All Wards</option>${WARDS.map(w=>`<option value="${w.name}">${w.name}</option>`).join('')}</select>
         <select id="filterStatus" onchange="filterVoters()"><option value="">All Status</option>${BALLOT_STATUSES.slice(0,7).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
         <select id="filterCanvass" onchange="filterVoters()"><option value="">All Canvass</option>${CANVASS_STATUSES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
-        <input type="text" placeholder="Search name, address..." id="voterSearch" onkeyup="filterVoters()">
+        <select id="filterReg" onchange="filterVoters()"><option value="">All Registration</option><option value="Registered">Registered</option><option value="Registration Needed">Registration Needed</option><option value="Registration Follow-Up">Follow-Up</option></select>
+        <input type="text" placeholder="Search..." id="voterSearch" onkeyup="filterVoters()">
       </div></div>
-      <div class="table-wrap"><table id="voterTable"><thead><tr><th>Voter</th><th>Ward</th><th>Ballot Status</th><th>Registration</th><th>Worker</th><th>Canvass</th></tr></thead><tbody id="voterTableBody">${rows}</tbody></table></div></div>
+      <div class="table-wrap"><table id="voterTable"><thead><tr><th>Voter</th><th>Ward</th><th>Ballot Status</th><th>Registration</th><th>Worker</th><th>Canvass</th><th>DNC</th></tr></thead><tbody id="voterTableBody">${rows}</tbody></table></div></div>
     `;
   }
 
@@ -503,38 +524,43 @@
     const ward = document.getElementById('filterWard')?.value||'';
     const status = document.getElementById('filterStatus')?.value||'';
     const canvass = document.getElementById('filterCanvass')?.value||'';
+    const reg = document.getElementById('filterReg')?.value||'';
     const search = document.getElementById('voterSearch')?.value?.toLowerCase()||'';
     let filtered = VOTERS;
     if(ward) filtered = filtered.filter(v=>v.ward===ward);
     if(status) filtered = filtered.filter(v=>v.ballotStatus===status);
     if(canvass) filtered = filtered.filter(v=>v.canvassStatus===canvass);
-    if(search) filtered = filtered.filter(v=>v.name.toLowerCase().includes(search)||v.address.toLowerCase().includes(search)||v.phone.includes(search));
+    if(reg) filtered = filtered.filter(v=>v.registration===reg);
+    if(search) filtered = filtered.filter(v=>v.name.toLowerCase().includes(search)||v.address.toLowerCase().includes(search)||v.phone.includes(search)||v.voterId.toLowerCase().includes(search));
     const tbody = document.getElementById('voterTableBody');
     if(!tbody) return;
     tbody.innerHTML = filtered.slice(0,25).map(v=>`
       <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
         <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
         <td>${v.ward}</td>
-        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':'gray'}">${v.ballotStatus}</span></td>
-        <td><span class="badge badge-${v.registration==='Registered'?'green':'red'}">${v.registration}</span></td>
+        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
+        <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
         <td>${v.assignedWorker}</td>
         <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
+        <td>${v.dnc?'🚫':''}</td>
       </tr>
     `).join('');
-    if(filtered.length===0) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--gray-500)">No voters match your filters</td></tr>';
+    if(filtered.length===0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-500)">No voters match your filters</td></tr>';
   };
 
   window.showVoterDetail = function(id){
     const v = VOTERS.find(v=>v.id===id);
     if(!v) return;
     const contacts = v.contacts||[];
-    const contactHtml = contacts.slice(0,5).map(c=>`
+    const contactHtml = contacts.slice(0,8).map(c=>`
       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--gray-50);font-size:13px">
         <span><span class="badge badge-${c.type==='Call'?'blue':c.type==='Door'?'amber':'green'}">${c.type}</span> ${c.result}</span>
         <span class="muted small">${fmtDate(c.date)} · ${c.worker}</span>
       </div>
     `).join('');
-    toast(`📋 ${v.name}\n📍 ${v.address}\n📞 ${v.phone}\n🗳️ ${v.ballotStatus}\n👤 ${v.assignedWorker}\n${v.notes? '📝 '+v.notes:''}\n${contacts.length>0?'\n📞 Recent Contacts:\n'+contactHtml:''}`);
+    const regAssist = v.registrationAssisted ? `📋 Registration Assistance: ${v.registrationAssisted}\n` : '';
+    const regFollow = v.registrationFollowUp ? `📋 Registration Follow-Up: ${v.registrationFollowUp}\n` : '';
+    toast(`📋 ${v.name}\n📍 ${v.address}\n📞 ${v.phone}\n🗳️ ${v.ballotStatus}\n📬 Voter Says Returned: ${v.voterSaysReturnedDate?fmtDate(v.voterSaysReturnedDate):'No'}\n📬 Officially Returned: ${v.ballotReturnedDate?fmtDate(v.ballotReturnedDate):'No'}\n👤 ${v.assignedWorker}\n${regAssist}${regFollow}${v.dnc?'🚫 Do Not Contact\n':''}${v.notes? '📝 '+v.notes:''}\n${contacts.length>0?'\n📞 Recent Contacts:\n'+contactHtml:''}`);
   };
 
   // ===== BALLOT =====
@@ -542,24 +568,25 @@
     const returned = VOTERS.filter(v=>v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed');
     const outstanding = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed');
     const vsReturned = VOTERS.filter(v=>v.ballotStatus==='Voter Says Returned');
+    const tenDayOut = VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate));
     return `
-      <div class="page-head"><div><div class="page-title">Ballot Tracker</div><div class="page-sub">${fmt(returned.length)} returned · ${fmt(outstanding.length)} outstanding · ${fmt(vsReturned.length)} voter-says-returned</div></div><div class="page-actions"><button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('upload')} Reconcile Returns</button></div></div>
+      <div class="page-head"><div><div class="page-title">Ballot Tracker</div><div class="page-sub">${fmt(returned.length)} official returns · ${fmt(vsReturned.length)} voter-says-returned · ${fmt(outstanding.length)} outstanding</div></div><div class="page-actions"><button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('upload')} Reconcile Returns</button></div></div>
       <div class="grid grid-2">
         <div class="card"><div class="card-head"><span class="card-title">Returned by Ward</span></div><div class="card-pad">
           ${WARDS.map(w=>{const cnt=VOTERS.filter(v=>v.wardId===w.id && (v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed')).length;const totalW=VOTERS.filter(v=>v.wardId===w.id).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${w.name}</span><span>${cnt} / ${totalW} (${Math.round(cnt/totalW*100||0)}%)</span></div>`}).join('')}
         </div></div>
         <div class="card"><div class="card-head"><span class="card-title">Ballot Status Distribution</span></div><div class="card-pad">
-          ${BALLOT_STATUSES.slice(0,7).map(s=>{const cnt=VOTERS.filter(v=>v.ballotStatus===s).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`}).join('')}
+          ${BALLOT_STATUSES.slice(0,8).map(s=>{const cnt=VOTERS.filter(v=>v.ballotStatus===s).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`}).join('')}
         </div></div>
       </div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Outstanding Ballots (10+ days)</span><span class="badge badge-red">Priority</span></div><div class="card-pad">
-        ${VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate)).slice(0,10).map(v=>`
+      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">🚨 Priority: Ballots Mailed >10 Days — Not Returned</span><span class="badge badge-red">${tenDayOut.length}</span></div><div class="card-pad">
+        ${tenDayOut.slice(0,10).map(v=>`
           <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)">
             <span>${esc(v.name)} — ${v.ward}</span>
-            <span class="muted small">Mailed ${fmtDate(v.ballotMailedDate)}</span>
+            <span class="muted small">Mailed ${fmtDate(v.ballotMailedDate)} (${Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24))} days)</span>
           </div>
         `).join('')}
-        ${VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate)).length>10?`<div class="muted small" style="text-align:center;padding-top:6px">+${VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate)).length-10} more</div>`:''}
+        ${tenDayOut.length>10?`<div class="muted small" style="text-align:center;padding-top:6px">+${tenDayOut.length-10} more</div>`:''}
       </div></div>
     `;
   }
@@ -573,9 +600,11 @@
     VOTERS.forEach(v=>{
       if(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'||v.ballotStatus==='Voter Says Returned'){
         if(Math.random()>0.15){
+          const oldStatus = v.ballotStatus;
           v.ballotStatus = 'Officially Returned';
           v.ballotReturnedDate = new Date();
           matched++;
+          AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'System',action:'Ballot Returned',detail:`${v.name}: ${oldStatus} → Officially Returned (Reconciliation)`});
         } else {
           errors++;
         }
@@ -585,8 +614,6 @@
     });
     const msg = `📊 Reconciliation Complete\n${processed} records processed\n${matched} voters matched → changed to Returned\n${alreadyReturned} already marked Returned\n${errors} records could not be matched`;
     toast(msg, 'success');
-    // Add audit log entry
-    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Reconciliation',detail:`${matched} ballots reconciled`});
     renderPage();
   };
 
@@ -596,10 +623,10 @@
       <div class="page-head"><div><div class="page-title">Field Map</div><div class="page-sub">Ward 3 · Precinct 4 · ${VOTERS.filter(v=>v.wardId==='W3').length} voters</div></div></div>
       <div class="card" style="height:500px;display:flex;align-items:center;justify-content:center;background:#e7ecf5;border-radius:var(--radius-lg);border:1px solid var(--gray-200);flex-direction:column;gap:16px">
         <div style="font-size:40px;color:#6b7280">🗺️</div>
-        <div style="font-weight:600;color:#374151">Map View — ${WORKERS.filter(w=>w.role==='Canvasser').length} canvassers active</div>
-        <div class="flex gap-8"><span class="badge badge-green">● ${VOTERS.filter(v=>v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter').length} Completed</span><span class="badge badge-amber">● ${VOTERS.filter(v=>v.canvassStatus==='Not Visited').length} Pending</span></div>
+        <div style="font-weight:600;color:#374151">Interactive Map View — ${WORKERS.filter(w=>w.role==='Canvasser').length} canvassers active</div>
+        <div class="flex gap-8"><span class="badge badge-green">● ${VOTERS.filter(v=>v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter').length} Completed</span><span class="badge badge-amber">● ${VOTERS.filter(v=>v.canvassStatus==='Not Visited').length} Pending</span><span class="badge badge-red">● ${VOTERS.filter(v=>v.dnc).length} DNC</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-          ${STREETS.slice(0,6).map(s=>{
+          ${STREETS.slice(0,8).map(s=>{
             const cnt = VOTERS.filter(v=>v.street===s).length;
             const done = VOTERS.filter(v=>v.street===s && v.canvassStatus!=='Not Visited').length;
             return `<span class="badge badge-${done===cnt?'green':done>0?'amber':'gray'}">${s.split(' ')[0]} ${done}/${cnt}</span>`;
@@ -617,7 +644,7 @@
           }).join('')}
         </div></div>
         <div class="card"><div class="card-head"><span class="card-title">Canvass Results</span></div><div class="card-pad">
-          ${CANVASS_STATUSES.slice(0,6).map(s=>{
+          ${CANVASS_STATUSES.slice(0,8).map(s=>{
             const cnt = VOTERS.filter(v=>v.canvassStatus===s).length;
             return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`;
           }).join('')}
@@ -629,7 +656,7 @@
   // ===== TURFS =====
   function renderTurfs(){
     return `
-      <div class="page-head"><div><div class="page-title">Turfs</div><div class="page-sub">${TURFS.length} turf areas · ${TURFS.reduce((a,t)=>a+t.addresses,0)} addresses</div></div></div>
+      <div class="page-head"><div><div class="page-title">Turfs</div><div class="page-sub">${TURFS.length} turf areas · ${TURFS.reduce((a,t)=>a+t.addresses,0)} addresses</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Create new turf')">${ic('plus')} New Turf</button></div></div>
       <div class="grid grid-2">
         ${TURFS.map(t=>`
           <div class="card card-pad">
@@ -646,7 +673,7 @@
 
   // ===== ASSIGNMENTS =====
   function renderAssignments(){
-    return `<div class="page-head"><div><div class="page-title">Assignments</div><div class="page-sub">Manage worker turf assignments</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Batch assignment form')">${ic('assign')} Batch Assign</button></div></div>
+    return `<div class="page-head"><div><div class="page-title">Assignments</div><div class="page-sub">Manage worker turf assignments · Batch assign available</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Batch assignment: Select workers and voters')">${ic('assign')} Batch Assign</button></div></div>
       <div class="card"><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Turf</th><th>Ward</th><th>Addresses</th><th>Progress</th><th>Status</th></tr></thead><tbody>
         ${WORKERS.filter(w=>w.role==='Canvasser').map(w=>{
           const turf = TURFS.find(t=>t.assigned.includes(w.name));
@@ -657,7 +684,7 @@
 
   // ===== TEAM =====
   function renderTeam(){
-    return `<div class="page-head"><div><div class="page-title">Team</div><div class="page-sub">${WORKERS.length} members · ${WORKERS.filter(w=>w.status==='Active').length} active</div></div></div>
+    return `<div class="page-head"><div><div class="page-title">Team</div><div class="page-sub">${WORKERS.length} members · ${WORKERS.filter(w=>w.status==='Active').length} active</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Add team member')">${ic('plus')} Add Member</button></div></div>
       <div class="grid grid-3">${WORKERS.map(w=>`
         <div class="card card-pad"><div style="display:flex;align-items:center;gap:10px"><div class="sb-avatar" style="background:${w.avatarColor||'#5b8dff'}">${initials(w.name)}</div><div><strong>${w.name}</strong><div class="muted small">${w.role} · ${w.status}</div><div class="muted small">${w.ward!=='—'?w.ward:''} ${w.precinct!=='—'?w.precinct:''}</div></div></div></div>
       `).join('')}</div>`;
@@ -673,10 +700,20 @@
 
   // ===== IMPORTS =====
   function renderImports(){
-    return `<div class="page-head"><div><div class="page-title">Imports</div><div class="page-sub">Data import history and reconciliation</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Upload CSV/Excel file')">${ic('upload')} Upload File</button></div></div>
+    return `<div class="page-head"><div><div class="page-title">Imports & Reconciliation</div><div class="page-sub">Data import history with matching reports</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Upload CSV/Excel file with column mapping')">${ic('upload')} Upload File</button></div></div>
       <div class="card"><div class="table-wrap"><table><thead><tr><th>File</th><th>Type</th><th>Records</th><th>Matched</th><th>Errors</th><th>Status</th><th>Date</th></tr></thead><tbody>
         ${IMPORTS.map(i=>`<tr><td>${i.filename}</td><td>${i.type}</td><td>${i.records}</td><td>${i.matched||i.records}</td><td>${i.errors||0}</td><td><span class="badge badge-green">${i.status}</span></td><td>${fmtDate(i.date)}</td></tr>`).join('')}
-      </tbody></table></div></div>`;
+      </tbody></table></div></div>
+      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Column Mapping Example</span></div><div class="card-pad">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="small muted">Spreadsheet Column → System Field</div>
+          <div class="small muted">Example</div>
+          <div><span class="badge badge-blue">Cell Number</span> → Phone</div><div>810-555-1212</div>
+          <div><span class="badge badge-blue">AV Sent</span> → Ballot Mailed Date</div><div>10/01/2026</div>
+          <div><span class="badge badge-blue">AV Received</span> → Ballot Returned Date</div><div>10/15/2026</div>
+          <div><span class="badge badge-blue">Voter ID</span> → Voter ID</div><div>100234</div>
+        </div>
+      </div></div>`;
   }
 
   // ===== CHASE LIST =====
@@ -686,14 +723,15 @@
       const cnt = chaseVoters.filter(v=>v.wardId===w.id).length;
       return {...w, count:cnt};
     });
+    const totalChase = chaseVoters.length;
     return `
-      <div class="page-head"><div><div class="page-title">Chase List</div><div class="page-sub">${chaseVoters.length} outstanding ballots needing follow-up</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Assign selected voters')">${ic('assign')} Assign Selected</button><button class="btn btn-secondary btn-sm" onclick="toast('Export Chase List')">${ic('download')} Export</button></div></div>
+      <div class="page-head"><div><div class="page-title">Chase List</div><div class="page-sub">${totalChase} outstanding ballots needing follow-up · ${chaseVoters.filter(v=>v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate)).length} >10 days outstanding</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Assign selected voters to worker')">${ic('assign')} Assign Selected</button><button class="btn btn-secondary btn-sm" onclick="toast('Export Chase List')">${ic('download')} Export</button></div></div>
       <div class="grid grid-4" style="margin-bottom:14px">
         ${byWard.map(w=>`
           <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">${w.name}</span></div><div class="kpi-value" style="font-size:20px">${w.count}</div></div>
         `).join('')}
       </div>
-      <div class="card"><div class="card-head"><span class="card-title">Outstanding Ballots (Priority Order)</span></div><div class="table-wrap"><table><thead><tr><th>Voter</th><th>Ward</th><th>Mailed</th><th>Days Out</th><th>Worker</th><th>Action</th></tr></thead><tbody>
+      <div class="card"><div class="card-head"><span class="card-title">Outstanding Ballots (Priority Order)</span><span class="badge badge-red">${totalChase}</span></div><div class="table-wrap"><table><thead><tr><th>Voter</th><th>Ward</th><th>Mailed</th><th>Days Out</th><th>Worker</th><th>Action</th></tr></thead><tbody>
         ${chaseVoters.sort((a,b)=>new Date(a.ballotMailedDate)-new Date(b.ballotMailedDate)).slice(0,20).map(v=>{
           const days = v.ballotMailedDate?Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24)):'—';
           return `<tr>
@@ -702,22 +740,94 @@
             <td>${v.ballotMailedDate?fmtDate(v.ballotMailedDate):'—'}</td>
             <td><span class="badge badge-${days>14?'red':days>7?'amber':'gray'}">${days} days</span></td>
             <td>${v.assignedWorker}</td>
-            <td><div style="display:flex;gap:4px"><button class="btn btn-sm btn-secondary" onclick="toast('Call ${v.name}')">${ic('phone')}</button><button class="btn btn-sm btn-success" onclick="markReturned(${v.id})">${ic('check')}</button></div></td>
+            <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'Call')">${ic('phone')}</button>
+              <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'SMS')">${ic('sms')}</button>
+              <button class="btn btn-sm btn-success" onclick="markReturned(${v.id})">${ic('check')}</button>
+            </div></td>
           </tr>`;
         }).join('')}
         ${chaseVoters.length>20?`<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--gray-500)">+${chaseVoters.length-20} more outstanding ballots</td></tr>`:''}
       </tbody></table></div></div>`;
   }
 
+  window.recordContact = function(id, type){
+    const v = VOTERS.find(v=>v.id===id);
+    if(!v) return;
+    const result = prompt(`Record ${type} contact for ${v.name}:\nChoose result: Called-Answered, Called-No Answer, Text Sent, Wrong Number, Disconnected, Voter Says Ballot Returned, Voter Needs Assistance, Voter Will Return Ballot, Do Not Contact`);
+    if(!result) return;
+    v.contacts.push({type:type,result:result,date:new Date(),worker:'Admin John',note:''});
+    if(result==='Voter Says Ballot Returned'){
+      v.ballotStatus = 'Voter Says Returned';
+      v.voterSaysReturnedDate = new Date();
+    }
+    if(result==='Do Not Contact'){
+      v.dnc = true;
+    }
+    toast(`✅ ${type} contact recorded for ${v.name}: ${result}`, 'success');
+    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Contact Recorded',detail:`${v.name}: ${type} → ${result}`});
+    renderPage();
+  };
+
   window.markReturned = function(id){
     const v = VOTERS.find(v=>v.id===id);
     if(!v) return;
+    const oldStatus = v.ballotStatus;
     v.ballotStatus = 'Officially Returned';
     v.ballotReturnedDate = new Date();
-    toast(`✅ ${v.name} marked as Returned`, 'success');
-    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Ballot Returned',detail:`${v.name} marked returned`});
+    toast(`✅ ${v.name} marked as Officially Returned`, 'success');
+    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Ballot Returned',detail:`${v.name}: ${oldStatus} → Officially Returned (Entered by: Admin John)`});
     renderPage();
   };
+
+  // ===== FIELD OPS =====
+  function renderFieldOps(){
+    const total = VOTERS.length;
+    const doorsAttempted = VOTERS.filter(v=>v.canvassStatus!=='Not Visited').length;
+    const contacted = VOTERS.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
+    const litDrops = VOTERS.filter(v=>v.canvassStatus==='Literature Dropped').length;
+    const regAssisted = VOTERS.filter(v=>v.registrationAssisted!==null).length;
+    const ballotFollowUps = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed').length;
+    const territoryCompleted = Math.round(doorsAttempted/total*100);
+    return `
+      <div class="page-head"><div><div class="page-title">Field Operations</div><div class="page-sub">Canvassing data bank · Street-level tracking</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Export Field Report')">${ic('download')} Export Report</button></div></div>
+      <div class="grid grid-3">
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters in Database</span></div><div class="kpi-value" style="font-size:20px">${fmt(total)}</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Doors Attempted</span></div><div class="kpi-value" style="font-size:20px">${fmt(doorsAttempted)}</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Territory Completed</span></div><div class="kpi-value" style="font-size:20px">${territoryCompleted}%</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters Contacted</span></div><div class="kpi-value" style="font-size:20px">${fmt(contacted)}</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Literature Drops</span></div><div class="kpi-value" style="font-size:20px">${fmt(litDrops)}</div></div>
+        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Registrations Assisted</span></div><div class="kpi-value" style="font-size:20px">${fmt(regAssisted)}</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Street-Level Tracking</span><span class="badge badge-blue">${STREETS.length} streets</span></div><div class="card-pad">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${STREETS.map(s=>{
+            const voters = VOTERS.filter(v=>v.street===s);
+            const totalS = voters.length;
+            const completed = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
+            const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
+            const pending = totalS - completed;
+            return `<div class="household-card">
+              <div style="display:flex;justify-content:space-between"><strong>${s}</strong><span class="badge badge-${completed===totalS?'green':completed>0?'amber':'gray'}">${completed}/${totalS}</span></div>
+              <div class="small muted">${spoke} spoke · ${pending} pending</div>
+              <div class="progress" style="margin-top:4px"><div style="width:${totalS?Math.round(completed/totalS*100):0}%"></div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div></div>
+      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Canvasser Productivity</span></div><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Assigned</th><th>Attempted</th><th>Spoke</th><th>Lit Drops</th><th>No Answer</th><th>Reg Assist</th></tr></thead><tbody>
+        ${WORKERS.filter(w=>w.role==='Canvasser').slice(0,8).map(w=>{
+          const voters = VOTERS.filter(v=>v.assignedWorker===w.name);
+          const assigned = voters.length;
+          const attempted = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
+          const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
+          const lit = voters.filter(v=>v.canvassStatus==='Literature Dropped').length;
+          const noAns = voters.filter(v=>v.canvassStatus==='No Answer').length;
+          const reg = voters.filter(v=>v.registrationAssisted!==null).length;
+          return `<tr><td><strong>${w.name}</strong></td><td>${assigned}</td><td>${attempted}</td><td>${spoke}</td><td>${lit}</td><td>${noAns}</td><td>${reg}</td></tr>`;
+        }).join('')}
+      </tbody></table></div></div>`;
+  }
 
   // ===== SETTINGS =====
   function renderSettings(){
@@ -725,10 +835,11 @@
       <div class="grid grid-2">
         <div class="card card-pad"><div class="card-title">Automation Rules</div>
           <div style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Ballot Chase Queue</span><span class="badge badge-green">Enabled</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Ballot Chase Queue (10+ days)</span><span class="badge badge-green">Enabled</span></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Registration Follow-Up</span><span class="badge badge-green">Enabled</span></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Voter-Says-Returned Reconciliation</span><span class="badge badge-green">Enabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Stale Contact Re-Queue</span><span class="badge badge-amber">Disabled</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Stale Contact Re-Queue (21+ days)</span><span class="badge badge-amber">Disabled</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0"><span>DNC Suppression</span><span class="badge badge-green">Enabled</span></div>
           </div>
         </div>
         <div class="card card-pad"><div class="card-title">Security & Access</div>
@@ -744,7 +855,7 @@
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           <button class="btn btn-secondary" onclick="toast('Export all data')">${ic('download')} Export Database</button>
           <button class="btn btn-secondary" onclick="toast('Backup initiated')">${ic('clock')} Backup Now</button>
-          <button class="btn btn-danger" onclick="toast('⚠️ This would delete all data')">${ic('trash')} Reset Demo Data</button>
+          <button class="btn btn-danger" onclick="if(confirm('Reset all demo data?')){location.reload()}">${ic('trash')} Reset Demo Data</button>
         </div>
       </div>`;
   }
