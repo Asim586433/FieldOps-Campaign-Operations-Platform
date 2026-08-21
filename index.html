@@ -148,6 +148,7 @@
             margin-bottom: 1px;
             border: 1px solid transparent;
             position: relative;
+            transition: background .15s;
         }
         .sb-item:hover {
             background: rgba(255, 255, 255, .06);
@@ -209,6 +210,7 @@
             cursor: pointer;
             padding: 6px;
             border-radius: 8px;
+            transition: background .15s;
         }
         .sb-user:hover {
             background: rgba(255, 255, 255, .06);
@@ -256,6 +258,7 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+            transition: background .15s;
         }
         .sb-collapse-btn:hover {
             background: rgba(255, 255, 255, .1);
@@ -356,6 +359,7 @@
         .hdr-search input:focus {
             background: #fff;
             border-color: var(--blue-500);
+            outline: none;
         }
         .hdr-search svg {
             position: absolute;
@@ -383,6 +387,7 @@
             cursor: pointer;
             color: var(--gray-600);
             position: relative;
+            transition: background .15s;
         }
         .icon-btn:hover {
             background: var(--gray-50);
@@ -420,6 +425,7 @@
             cursor: pointer;
             border: 1px solid transparent;
             white-space: nowrap;
+            transition: background .15s, opacity .15s;
         }
         .btn svg {
             width: 15px;
@@ -698,6 +704,11 @@
             border: 1px solid var(--gray-300);
             background: #fff;
         }
+        .filter-bar select:focus,
+        .filter-bar input:focus {
+            border-color: var(--blue-500);
+            outline: none;
+        }
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -862,6 +873,7 @@
             gap: 4px;
             color: var(--gray-800);
             text-align: center;
+            transition: border-color .15s, background .15s;
         }
         .qa-btn:hover {
             border-color: var(--blue-500);
@@ -1020,6 +1032,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-width: 420px;
         }
         .toast {
             background: #1f2937;
@@ -1034,6 +1047,7 @@
             gap: 10px;
             min-width: 260px;
             animation: toastIn .18s ease;
+            max-width: 100%;
         }
         .toast.success {
             background: #0d3d29;
@@ -1053,6 +1067,54 @@
         }
         .toast .toast-content {
             white-space: pre-line;
+            word-break: break-word;
+        }
+
+        /* Clickable rows */
+        .clickable-row {
+            cursor: pointer;
+        }
+        .clickable-row:hover {
+            background: var(--blue-50);
+        }
+
+        /* Toast notification panel */
+        .notif-panel {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notif-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-100);
+            cursor: default;
+            display: flex;
+            gap: 10px;
+        }
+        .notif-item.unread {
+            background: var(--blue-50);
+        }
+        .notif-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--blue-600);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        /* Fix for inline SVG in buttons */
+        .btn svg,
+        .icon-btn svg,
+        .sb-icon svg,
+        .qa-btn svg {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .btn,
+        .icon-btn,
+        .sb-item,
+        .qa-btn {
+            user-select: none;
         }
     </style>
 </head>
@@ -1075,7 +1137,7 @@
                 <label for="loginPassword">Password</label>
                 <input type="password" id="loginPassword" placeholder="••••••••" value="Admin123!">
             </div>
-            <button class="btn btn-primary btn-login" onclick="handleLogin()">Sign In</button>
+            <button class="btn btn-primary btn-login" id="loginBtn">Sign In</button>
             <div class="demo-creds">
                 <div style="font-weight:600;color:var(--gray-700);margin-bottom:4px;">Demo Credentials</div>
                 <div class="row">
@@ -1165,12 +1227,10 @@
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('app').style.display = 'flex';
 
-            // Start session timeout (30 minutes)
             resetSessionTimeout();
 
             toast(`Welcome back, ${user.name}!`, 'success');
 
-            // Log login
             AUDIT_LOG.unshift({
                 id: uid('A'),
                 date: new Date(),
@@ -1180,6 +1240,7 @@
                 detail: `Logged in as ${user.role}`
             });
 
+            // Initialize the app
             renderSidebar();
             renderHeader();
             renderPage();
@@ -1190,7 +1251,7 @@
             sessionTimeout = setTimeout(() => {
                 toast('Session expired. Please log in again.', 'error');
                 logout();
-            }, 30 * 60 * 1000); // 30 minutes
+            }, 30 * 60 * 1000);
         }
 
         function logout() {
@@ -1202,8 +1263,9 @@
             toast('Logged out successfully', 'default');
         }
 
-        // Enter key on login
+        // Login handlers
         document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginBtn').addEventListener('click', handleLogin);
             document.getElementById('loginPassword').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') handleLogin();
             });
@@ -1264,7 +1326,7 @@
         function uid(p) { return p + '-' + Math.random().toString(36).slice(2, 8).toUpperCase() }
 
         function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;',
-            '"': '&quot;', "'": '&#39;' } [c])) }
+                '"': '&quot;', "'": '&#39;' } [c])) }
 
         function daysAgo(n) { const d = new Date();
             d.setDate(d.getDate() - n); return d }
@@ -1292,7 +1354,6 @@
         // ============================================================
         // DATA
         // ============================================================
-        // Use USERS from auth system as the team
         const WORKERS = USERS.map(u => ({
             id: u.id,
             name: u.name,
@@ -1305,14 +1366,13 @@
             avatarColor: u.avatarColor
         }));
 
-        // Add additional workers for demo
         const EXTRA_WORKERS = [
             { id: 'U006', name: 'Michael Davis', role: 'Canvasser', ward: 'Ward 2', precinct: 'Precinct 2',
-            turf: '2-06', status: 'Active', lastActive: daysAgo(0), avatarColor: '#e0526e' },
+                turf: '2-06', status: 'Active', lastActive: daysAgo(0), avatarColor: '#e0526e' },
             { id: 'U007', name: 'Robert Taylor', role: 'Canvasser', ward: 'Ward 1', precinct: 'Precinct 1',
-            turf: '1-02', status: 'Active', lastActive: daysAgo(2), avatarColor: '#2f9e6f' },
+                turf: '1-02', status: 'Active', lastActive: daysAgo(2), avatarColor: '#2f9e6f' },
             { id: 'U008', name: 'Thomas Miller', role: 'Canvasser', ward: 'Ward 4', precinct: 'Precinct 1',
-            turf: '4-01', status: 'Active', lastActive: daysAgo(0), avatarColor: '#7a5bff' },
+                turf: '4-01', status: 'Active', lastActive: daysAgo(0), avatarColor: '#7a5bff' },
             { id: 'U009', name: 'Karen White', role: 'Canvasser', ward: 'Ward 4', precinct: 'Precinct 5', turf: '4-03',
                 status: 'Inactive', lastActive: daysAgo(9), avatarColor: '#e08a2f' },
             { id: 'U010', name: 'James Brown', role: 'Data Manager', ward: '—', precinct: '—', turf: '—',
@@ -1410,7 +1470,6 @@
         }
         const VOTERS = Array.from({ length: 120 }, (_, i) => makeVoter(i + 1));
 
-        // Add contact history
         VOTERS.forEach(v => {
             if (Math.random() > 0.3) {
                 v.contacts.push({ type: 'Call', result: randOf(CONTACT_RESULTS), date: daysAgo(randInt(1, 10)),
@@ -1494,11 +1553,11 @@
 
         let AUDIT_LOG = [
             { id: 'A1', date: daysAgo(0), time: '3:42 PM', user: 'John Smith', action: 'Ballot Returned',
-                detail: 'Beverly Smith: Outstanding → Officially Returned (Entered by: John Smith)' },
+                detail: 'Beverly Smith: Outstanding → Officially Returned' },
             { id: 'A2', date: daysAgo(0), time: '2:15 PM', user: 'Admin John', action: 'Reconciliation',
                 detail: 'IMP-1829 — 892 records, 841 matched, 31 already returned, 20 errors' },
             { id: 'A3', date: daysAgo(0), time: '11:08 AM', user: 'Mary Jones', action: 'Canvass Update',
-                detail: 'John Carter — Literature Dropped (Door contact)' },
+                detail: 'John Carter — Literature Dropped' },
             { id: 'A4', date: daysAgo(1), time: '5:51 PM', user: 'Linda Moore', action: 'Turf Assignment',
                 detail: 'Turf 3-18 assigned to David Smith (142 addresses)' },
             { id: 'A5', date: daysAgo(1), time: '4:20 PM', user: 'James Brown', action: 'DNC Added',
@@ -1509,9 +1568,10 @@
         // SIDEBAR & HEADER
         // ============================================================
         function renderSidebar() {
-            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
-            const isWardCaptain = currentUser && currentUser.role === 'Ward Captain';
-            const isCanvasser = currentUser && currentUser.role === 'Canvasser';
+            if (!currentUser) return;
+            const isAdmin = currentUser.role === 'Campaign Admin';
+            const isWardCaptain = currentUser.role === 'Ward Captain';
+            const isCanvasser = currentUser.role === 'Canvasser';
 
             let nav = [
                 { label: 'Dashboard', key: 'dashboard', icon: 'dashboard' },
@@ -1522,7 +1582,6 @@
                 { label: 'Assignments', key: 'assignments', icon: 'assign' },
             ];
 
-            // Show limited nav for canvassers
             if (!isCanvasser) {
                 nav.push({ label: 'Team', key: 'team', icon: 'team' });
             }
@@ -1558,26 +1617,33 @@
             html += `</nav>
                 <div class="sb-footer">
                     <div class="sb-user" onclick="logout()" style="cursor:pointer;">
-                        <div class="sb-avatar" style="background:${currentUser ? currentUser.avatarColor || '#5b8dff' : '#5b8dff'}">${currentUser ? initials(currentUser.name) : 'U'}</div>
+                        <div class="sb-avatar" style="background:${currentUser.avatarColor || '#5b8dff'}">${initials(currentUser.name)}</div>
                         <div class="sb-user-meta">
-                            <div class="sb-user-name">${currentUser ? currentUser.name : 'User'}</div>
-                            <div class="sb-user-role">${currentUser ? currentUser.role : 'Unknown'}</div>
+                            <div class="sb-user-name">${currentUser.name}</div>
+                            <div class="sb-user-role">${currentUser.role}</div>
                         </div>
                     </div>
                     <button class="sb-collapse-btn" onclick="toggleSidebar()">${ic('chevLeft')} Collapse</button>
                     <button class="sb-collapse-btn" style="margin-top:4px;background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.05);" onclick="logout()">${ic('logout')} Sign Out</button>
                 </div>`;
             document.getElementById('sidebar').innerHTML = html;
+
+            // Sidebar click handlers - using event delegation
             document.querySelectorAll('.sb-item[data-page]').forEach(el => {
-                el.addEventListener('click', () => { window.currentPage = el.dataset.page;
+                el.addEventListener('click', function(e) {
+                    const page = this.dataset.page;
+                    window.currentPage = page;
                     renderPage();
-                    closeMobileSidebar(); });
+                    closeMobileSidebar();
+                });
             });
         }
 
         function renderHeader() {
+            if (!currentUser) return;
             const unread = NOTIFICATIONS.filter(n => !n.read).length;
-            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            const isAdmin = currentUser.role === 'Campaign Admin';
+
             document.getElementById('header').innerHTML = `
                 <button class="hdr-burger" onclick="toggleMobileSidebar()">${ic('menu')}</button>
                 <button class="hdr-desktop-toggle" onclick="toggleSidebar()">${ic('menu')}</button>
@@ -1586,19 +1652,33 @@
                 <div class="hdr-right">
                     <button class="icon-btn" onclick="showNotifications()">${ic('bell')}${unread?`<span class="dot-badge">${unread}</span>`:''}</button>
                     ${isAdmin ? `<button class="btn btn-primary btn-sm" onclick="showQuickAddVoter()">${ic('plus')} Add Voter</button>` : ''}
-                    <div class="hdr-avatar" style="background:${currentUser ? currentUser.avatarColor || '#5b8dff' : '#5b8dff'}">${currentUser ? initials(currentUser.name) : 'U'}</div>
+                    <div class="hdr-avatar" style="background:${currentUser.avatarColor || '#5b8dff'}">${initials(currentUser.name)}</div>
                 </div>
             `;
+
+            // Global search handler
+            document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    globalSearch(this.value);
+                }
+            });
         }
 
-        function closeMobileSidebar() { document.getElementById('sidebar').classList.remove('mobile-open');
-            document.getElementById('mobileOverlay').classList.remove('show'); }
+        function closeMobileSidebar() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('mobileOverlay').classList.remove('show');
+        }
 
-        function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open');
-            document.getElementById('mobileOverlay').classList.toggle('show'); }
+        function toggleMobileSidebar() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+            document.getElementById('mobileOverlay').classList.toggle('show');
+        }
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('main-col').classList.toggle('collapsed'); }
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('main-col').classList.toggle('collapsed');
+        }
+
         window.currentPage = 'dashboard';
         window.toggleSidebar = toggleSidebar;
         window.closeMobileSidebar = closeMobileSidebar;
@@ -1612,10 +1692,6 @@
                 toast(`📍 ${streetMatch}: ${results.length} voters found`);
                 window.currentPage = 'fieldops';
                 renderPage();
-                setTimeout(() => {
-                    const rows = document.querySelectorAll('#streetTable tbody tr');
-                    rows.forEach((row, i) => { if (i < results.length) row.style.background = 'var(--blue-50)'; });
-                }, 100);
                 return;
             }
             const results = VOTERS.filter(v => v.name.toLowerCase().includes(query.toLowerCase()) || v.address.toLowerCase()
@@ -1625,16 +1701,12 @@
             toast(`Found ${results.length} voters matching "${query}"`);
             window.currentPage = 'voters';
             renderPage();
-            setTimeout(() => {
-                const rows = document.querySelectorAll('#voterTable tbody tr');
-                rows.forEach((row, i) => { if (i < results.length) row.style.background = 'var(--blue-50)'; });
-            }, 100);
         }
 
         function showNotifications() {
             const html = NOTIFICATIONS.map(n => `
-                    <div style="padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;gap:10px;${n.read?'':'background:var(--blue-50)'}">
-                        ${!n.read?'<span style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);margin-top:5px;flex-shrink:0"></span>':''}
+                    <div class="notif-item ${n.read?'':'unread'}">
+                        ${!n.read?'<span class="notif-dot"></span>':''}
                         <div><div style="font-weight:600">${n.title}</div><div style="font-size:12px;color:var(--gray-500)">${n.body}</div><div style="font-size:10px;color:var(--gray-400);margin-top:4px">${fmtDate(n.time)}</div></div>
                     </div>
                 `).join('');
@@ -1647,6 +1719,7 @@
         // PAGE RENDERERS
         // ============================================================
         function renderPage() {
+            if (!currentUser) return;
             const map = {
                 dashboard: renderDashboard,
                 voters: renderVoters,
@@ -1663,14 +1736,15 @@
                 myassignments: renderMyAssignments
             };
             const content = document.getElementById('content');
-            content.innerHTML = (map[window.currentPage] || renderDashboard)();
+            const renderFn = map[window.currentPage] || renderDashboard;
+            content.innerHTML = renderFn();
             document.querySelectorAll('.sb-item[data-page]').forEach(el => {
                 el.classList.toggle('active', el.dataset.page === window.currentPage);
             });
             resetSessionTimeout();
         }
 
-        // ===== MY ASSIGNMENTS (Canvasser view) =====
+        // ===== MY ASSIGNMENTS =====
         function renderMyAssignments() {
             if (!currentUser || currentUser.role !== 'Canvasser') {
                 toast('Access restricted to canvassers', 'error');
@@ -1726,6 +1800,7 @@
             const contacted = VOTERS.filter(v => v.canvassStatus !== 'Not Visited').length;
             const vsReturned = VOTERS.filter(v => v.ballotStatus === 'Voter Says Returned').length;
             const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+
             return `
                     <div class="page-head"><div><div class="page-title">Dashboard</div><div class="page-sub">Campaign operations overview · Flint GOTV 2026</div></div><div class="page-actions">${isAdmin?`<button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('check')} Run Reconciliation</button>`:''}<button class="btn btn-secondary btn-sm" onclick="toast('Refreshing data')">${ic('clock')} Refresh</button></div></div>
                     <div class="grid grid-4">
@@ -1749,7 +1824,7 @@
         // ===== VOTERS =====
         function renderVoters() {
             let rows = VOTERS.slice(0, 25).map(v => `
-                        <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
+                        <tr class="clickable-row" onclick="showVoterDetail(${v.id})">
                             <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
                             <td>${v.ward}</td>
                             <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
@@ -1759,6 +1834,7 @@
                             <td>${v.dnc?'🚫':''}</td>
                         </tr>
                     `).join('');
+
             return `
                         <div class="page-head"><div><div class="page-title">Voters</div><div class="page-sub">${fmt(VOTERS.length)} total voters</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Export CSV')">${ic('download')} Export</button></div></div>
                         <div class="card"><div class="table-toolbar"><div class="filter-bar">
@@ -1788,7 +1864,7 @@
             const tbody = document.getElementById('voterTableBody');
             if (!tbody) return;
             tbody.innerHTML = filtered.slice(0, 25).map(v => `
-                        <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
+                        <tr class="clickable-row" onclick="showVoterDetail(${v.id})">
                             <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
                             <td>${v.ward}</td>
                             <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
@@ -1827,6 +1903,7 @@
             const tenDayOut = VOTERS.filter(v => (v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed') &&
                 v.ballotMailedDate && daysAgo(10) > new Date(v.ballotMailedDate));
             const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+
             return `
                         <div class="page-head"><div><div class="page-title">Ballot Tracker</div><div class="page-sub">${fmt(returned)} official returns · ${fmt(vsReturned)} voter-says-returned · ${fmt(outstanding)} outstanding</div></div><div class="page-actions">${isAdmin?`<button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('upload')} Reconcile Returns</button>`:''}</div></div>
                         <div class="grid grid-2">
@@ -1869,7 +1946,7 @@
                         matched++;
                         AUDIT_LOG.unshift({ id: uid('A'), date: new Date(), time: fmtTime(new Date()),
                             user: currentUser.name, action: 'Ballot Returned',
-                            detail: `${v.name}: ${oldStatus} → Officially Returned (Reconciliation)` });
+                            detail: `${v.name}: ${oldStatus} → Officially Returned` });
                     } else {
                         errors++;
                     }
@@ -1990,7 +2067,6 @@
             let chaseVoters = VOTERS.filter(v => (v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed') &&
                 v.dnc === false);
 
-            // Filter by ward for ward captains
             if (isWardCaptain && currentUser.ward !== '—') {
                 chaseVoters = chaseVoters.filter(v => v.ward === currentUser.ward);
             }
@@ -2075,9 +2151,8 @@
                 .length;
             const litDrops = VOTERS.filter(v => v.canvassStatus === 'Literature Dropped').length;
             const regAssisted = VOTERS.filter(v => v.registrationAssisted !== null).length;
-            const ballotFollowUps = VOTERS.filter(v => v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed')
-                .length;
             const territoryCompleted = Math.round(doorsAttempted / total * 100);
+
             return `
                         <div class="page-head"><div><div class="page-title">Field Operations</div><div class="page-sub">Canvassing data bank · Street-level tracking</div></div></div>
                         <div class="grid grid-3">
@@ -2151,11 +2226,37 @@
         }
 
         // ============================================================
-        // INIT
+        // GLOBAL EXPOSE for inline onclick handlers
         // ============================================================
-        // The app starts with login screen visible, app hidden
-        // Login will show the app
+        window.handleLogin = handleLogin;
+        window.logout = logout;
+        window.globalSearch = globalSearch;
+        window.showNotifications = showNotifications;
+        window.showQuickAddVoter = showQuickAddVoter;
+        window.filterVoters = filterVoters;
+        window.showVoterDetail = showVoterDetail;
+        window.runReconciliation = runReconciliation;
+        window.recordContact = recordContact;
+        window.markReturned = markReturned;
+        window.renderPage = renderPage;
+        window.toast = toast;
+        window.fmtDate = fmtDate;
+        window.fmtTime = fmtTime;
+        window.esc = esc;
+        window.ic = ic;
+
+        // ============================================================
+        // INIT - App starts with login visible
+        // ============================================================
         console.log('ReturnVote platform ready - Login to begin');
+
+        // Auto-login with demo credentials for quick testing (optional)
+        // Uncomment below to auto-login as admin
+        // setTimeout(() => {
+        //     document.getElementById('loginEmail').value = 'admin@returnvote.com';
+        //     document.getElementById('loginPassword').value = 'Admin123!';
+        //     handleLogin();
+        // }, 300);
     </script>
 </body>
 </html>
