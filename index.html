@@ -1,872 +1,2161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReturnVote · Campaign Operations Platform</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f8f9fb;color:#111827;font-size:14px;line-height:1.5}
-    :root{--navy-950:#0b1220;--navy-900:#0f1b30;--navy-800:#152442;--navy-700:#1c2f54;--blue-600:#2454e0;--blue-500:#2f66f0;--blue-100:#e7edfd;--blue-50:#f3f6fe;--gray-950:#0d1117;--gray-900:#111827;--gray-800:#1f2937;--gray-700:#374151;--gray-600:#4b5563;--gray-500:#6b7280;--gray-400:#9ca3af;--gray-300:#d1d5db;--gray-200:#e5e7eb;--gray-100:#f3f4f6;--gray-50:#f8f9fb;--green-600:#0a8f5b;--green-100:#e3f7ec;--amber-600:#b4740e;--amber-100:#fdf1de;--red-600:#c22a3e;--red-100:#fbe7ea;--purple-600:#6d3fce;--purple-100:#efe8fd;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--shadow-sm:0 1px 2px rgba(16,24,40,.06);--shadow-md:0 4px 12px rgba(16,24,40,.08);--shadow-lg:0 12px 32px rgba(16,24,40,.14);--sidebar-w:250px;--sidebar-w-collapsed:68px;--header-h:60px}
-    #app{display:flex;min-height:100vh}
-    #sidebar{width:var(--sidebar-w);background:var(--navy-950);color:#cbd5f0;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:60;transition:width .18s ease, transform .2s ease;overflow:hidden}
-    #sidebar.collapsed{width:var(--sidebar-w-collapsed)}
-    .sb-brand{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;white-space:nowrap}
-    .sb-brand-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue-500),#5b8dff);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0}
-    .sb-brand-text{font-weight:700;font-size:15px;color:#fff;overflow:hidden}
-    .sb-brand-text small{display:block;font-weight:500;font-size:10.5px;color:#8fa3d1;letter-spacing:.04em;text-transform:uppercase}
-    #sidebar.collapsed .sb-brand-text{display:none}
-    .sb-nav{flex:1;overflow-y:auto;padding:10px 10px}
-    .sb-section-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#5f75a8;padding:14px 10px 6px;font-weight:700;white-space:nowrap}
-    #sidebar.collapsed .sb-section-label{display:none}
-    .sb-item{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;color:#c6d2ee;font-size:13.5px;font-weight:500;cursor:pointer;white-space:nowrap;margin-bottom:1px;border:1px solid transparent;position:relative}
-    .sb-item:hover{background:rgba(255,255,255,.06);color:#fff}
-    .sb-item.active{background:rgba(47,102,240,.22);color:#fff;border-color:rgba(75,124,240,.35)}
-    .sb-item.active .sb-icon{color:#7ba1ff}
-    .sb-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#8fa3d1}
-    .sb-icon svg{width:17px;height:17px;opacity:.85}
-    .sb-label{overflow:hidden;text-overflow:ellipsis}
-    #sidebar.collapsed .sb-label{display:none}
-    #sidebar.collapsed .sb-item{justify-content:center}
-    .sb-badge{margin-left:auto;background:var(--blue-600);color:#fff;font-size:10.5px;font-weight:700;border-radius:20px;padding:1px 7px}
-    #sidebar.collapsed .sb-badge{display:none}
-    .sb-footer{border-top:1px solid rgba(255,255,255,.08);padding:12px 14px;flex-shrink:0}
-    .sb-user{display:flex;align-items:center;gap:9px;cursor:pointer;padding:6px;border-radius:8px}
-    .sb-user:hover{background:rgba(255,255,255,.06)}
-    .sb-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#5b8dff,#7a5bff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12.5px}
-    .sb-user-meta{overflow:hidden;white-space:nowrap}
-    #sidebar.collapsed .sb-user-meta{display:none}
-    .sb-user-name{font-size:13px;font-weight:600;color:#fff}
-    .sb-user-role{font-size:11px;color:#8fa3d1}
-    .sb-collapse-btn{width:100%;margin-top:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#a9b8de;border-radius:8px;padding:7px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px}
-    .sb-collapse-btn:hover{background:rgba(255,255,255,.1)}
-    #main-col{flex:1;min-width:0;margin-left:var(--sidebar-w);transition:margin-left .18s ease;display:flex;flex-direction:column}
-    #main-col.collapsed{margin-left:var(--sidebar-w-collapsed)}
-    #header{height:var(--header-h);flex-shrink:0;background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:14px;padding:0 18px;position:sticky;top:0;z-index:40}
-    .hdr-burger{display:none;background:none;border:1px solid var(--gray-200);border-radius:8px;width:34px;height:34px;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-600)}
-    .hdr-desktop-toggle{background:none;border:1px solid var(--gray-200);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-500);flex-shrink:0}
-    .hdr-desktop-toggle:hover{background:var(--gray-100)}
-    .hdr-select{display:flex;flex-direction:column;gap:0;padding:4px 10px;border-radius:8px;border:1px solid var(--gray-200);cursor:pointer;min-width:150px}
-    .hdr-select:hover{background:var(--gray-50)}
-    .hdr-select-label{font-size:10px;color:var(--gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-    .hdr-select-value{font-size:13px;font-weight:600;color:var(--gray-900)}
-    .hdr-search{flex:1;max-width:420px;position:relative;display:flex;align-items:center}
-    .hdr-search input{width:100%;padding:8px 12px 8px 34px;border-radius:8px;border:1px solid var(--gray-200);background:var(--gray-50);font-size:13.5px;color:var(--gray-900)}
-    .hdr-search input:focus{background:#fff;border-color:var(--blue-500)}
-    .hdr-search svg{position:absolute;left:10px;width:16px;height:16px;color:var(--gray-400)}
-    .hdr-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
-    .icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--gray-200);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-600);position:relative}
-    .icon-btn:hover{background:var(--gray-50)}
-    .icon-btn svg{width:17px;height:17px}
-    .dot-badge{position:absolute;top:-3px;right:-3px;background:var(--red-600);color:#fff;font-size:9.5px;font-weight:700;border-radius:20px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff}
-    .btn{display:inline-flex;align-items:center;gap:6px;justify-content:center;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;white-space:nowrap}
-    .btn svg{width:15px;height:15px}
-    .btn-primary{background:var(--blue-600);color:#fff;box-shadow:var(--shadow-sm)}
-    .btn-primary:hover{background:#1d47c9}
-    .btn-secondary{background:#fff;border-color:var(--gray-300);color:var(--gray-700)}
-    .btn-secondary:hover{background:var(--gray-50)}
-    .btn-success{background:var(--green-600);color:#fff}
-    .btn-success:hover{background:#0a7a4e}
-    .btn-sm{padding:5px 10px;font-size:12px;border-radius:7px}
-    .hdr-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#5b8dff,#7a5bff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;cursor:pointer;flex-shrink:0}
-    #content{padding:22px 26px 60px;max-width:1520px;width:100%;margin:0 auto}
-    .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-    .page-title{font-size:22px;font-weight:700;color:var(--gray-900);letter-spacing:-.01em}
-    .page-sub{font-size:13px;color:var(--gray-500);margin-top:3px}
-    .page-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .grid{display:grid;gap:14px}
-    .grid-4{grid-template-columns:repeat(4,1fr)}
-    .grid-3{grid-template-columns:repeat(3,1fr)}
-    .grid-2{grid-template-columns:repeat(2,1fr)}
-    @media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:700px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}}
-    .card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
-    .card-pad{padding:18px}
-    .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--gray-100)}
-    .card-title{font-size:14.5px;font-weight:700;color:var(--gray-900)}
-    .kpi-card{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
-    .kpi-top{display:flex;align-items:center;justify-content:space-between}
-    .kpi-label{font-size:12px;color:var(--gray-500);font-weight:600}
-    .kpi-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center}
-    .kpi-value{font-size:25px;font-weight:800;color:var(--gray-900);letter-spacing:-.02em}
-    .kpi-delta{font-size:12px;font-weight:600;display:flex;align-items:center;gap:3px}
-    .kpi-delta.up{color:var(--green-600)}
-    .kpi-delta.down{color:var(--red-600)}
-    .badge{display:inline-flex;align-items:center;gap:4px;padding:2.5px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}
-    .badge-gray{background:var(--gray-100);color:var(--gray-700)}
-    .badge-blue{background:var(--blue-100);color:var(--blue-600)}
-    .badge-green{background:var(--green-100);color:var(--green-600)}
-    .badge-amber{background:var(--amber-100);color:var(--amber-600)}
-    .badge-red{background:var(--red-100);color:var(--red-600)}
-    .badge-purple{background:var(--purple-100);color:var(--purple-600)}
-    .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-    .table-wrap{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--gray-200);background:var(--gray-50);white-space:nowrap}
-    tbody td{padding:11px 14px;border-bottom:1px solid var(--gray-100);color:var(--gray-800);vertical-align:middle}
-    tbody tr:hover{background:var(--blue-50)}
-    .cell-primary{font-weight:600;color:var(--gray-900)}
-    .cell-sub{font-size:11.5px;color:var(--gray-500);margin-top:1px}
-    .table-toolbar{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--gray-100);flex-wrap:wrap}
-    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .filter-bar select,.filter-bar input{width:auto;min-width:120px;padding:7px 10px;font-size:12.5px;border-radius:8px;border:1px solid var(--gray-300);background:#fff}
-    .modal-overlay{position:fixed;inset:0;background:rgba(15,20,35,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;backdrop-filter:blur(1px)}
-    .modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
-    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-100);flex-shrink:0}
-    .modal-title{font-size:15.5px;font-weight:700}
-    .modal-body{padding:20px;overflow-y:auto}
-    .modal-foot{padding:14px 20px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
-    .modal-close{width:30px;height:30px;border-radius:7px;border:none;background:var(--gray-100);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600)}
-    .modal-close:hover{background:var(--gray-200)}
-    .progress{height:7px;border-radius:20px;background:var(--gray-200);overflow:hidden}
-    .progress > div{height:100%;background:var(--blue-600);border-radius:20px}
-    .mobile-overlay{display:none}
-    @media(max-width:1024px){#sidebar{transform:translateX(-100%);width:260px}#sidebar.mobile-open{transform:translateX(0)}#main-col{margin-left:0 !important}.hdr-burger{display:flex}.hdr-desktop-toggle{display:none}.mobile-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55}#content{padding:16px}}
-    .muted{color:var(--gray-500)}.small{font-size:12px}.flex{display:flex}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.flex-between{display:flex;align-items:center;justify-content:space-between}
-    .qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-    .qa-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--gray-200);background:#fff;font-weight:700;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--gray-800);text-align:center}
-    .qa-btn:hover{border-color:var(--blue-500);background:var(--blue-50)}
-    .qa-btn svg{width:18px;height:18px;color:var(--blue-600)}
-    .qa-btn.success:hover{border-color:var(--green-600);background:var(--green-100)}
-    .qa-btn.success svg{color:var(--green-600)}
-    .qa-btn.danger:hover{border-color:var(--red-600);background:var(--red-100)}
-    .qa-btn.danger svg{color:var(--red-600)}
-    .street-progress{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-100)}
-    .street-progress .street-name{min-width:150px;font-weight:600}
-    .street-progress .progress{flex:1}
-    .household-card{border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:8px}
-    .household-card .voter-row{padding:4px 0;border-bottom:1px solid var(--gray-50)}
-    .contact-timeline{position:relative;padding-left:20px}
-    .contact-timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--gray-200)}
-    .contact-item{position:relative;padding-bottom:12px;padding-left:16px}
-    .contact-item::before{content:'';position:absolute;left:-6px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--blue-500);border:2px solid #fff}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReturnVote · Campaign Operations Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f8f9fb;
+            color: #111827;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        :root {
+            --navy-950: #0b1220;
+            --navy-900: #0f1b30;
+            --navy-800: #152442;
+            --navy-700: #1c2f54;
+            --blue-600: #2454e0;
+            --blue-500: #2f66f0;
+            --blue-100: #e7edfd;
+            --blue-50: #f3f6fe;
+            --gray-950: #0d1117;
+            --gray-900: #111827;
+            --gray-800: #1f2937;
+            --gray-700: #374151;
+            --gray-600: #4b5563;
+            --gray-500: #6b7280;
+            --gray-400: #9ca3af;
+            --gray-300: #d1d5db;
+            --gray-200: #e5e7eb;
+            --gray-100: #f3f4f6;
+            --gray-50: #f8f9fb;
+            --green-600: #0a8f5b;
+            --green-100: #e3f7ec;
+            --amber-600: #b4740e;
+            --amber-100: #fdf1de;
+            --red-600: #c22a3e;
+            --red-100: #fbe7ea;
+            --purple-600: #6d3fce;
+            --purple-100: #efe8fd;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-sm: 0 1px 2px rgba(16, 24, 40, .06);
+            --shadow-md: 0 4px 12px rgba(16, 24, 40, .08);
+            --shadow-lg: 0 12px 32px rgba(16, 24, 40, .14);
+            --sidebar-w: 250px;
+            --sidebar-w-collapsed: 68px;
+            --header-h: 60px;
+        }
+        #app {
+            display: flex;
+            min-height: 100vh;
+        }
+        #sidebar {
+            width: var(--sidebar-w);
+            background: var(--navy-950);
+            color: #cbd5f0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 60;
+            transition: width .18s ease, transform .2s ease;
+            overflow: hidden;
+        }
+        #sidebar.collapsed {
+            width: var(--sidebar-w-collapsed);
+        }
+        .sb-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .sb-brand-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--blue-500), #5b8dff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .sb-brand-text {
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            overflow: hidden;
+        }
+        .sb-brand-text small {
+            display: block;
+            font-weight: 500;
+            font-size: 10.5px;
+            color: #8fa3d1;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        #sidebar.collapsed .sb-brand-text {
+            display: none;
+        }
+        .sb-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 10px;
+        }
+        .sb-section-label {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: #5f75a8;
+            padding: 14px 10px 6px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        #sidebar.collapsed .sb-section-label {
+            display: none;
+        }
+        .sb-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            color: #c6d2ee;
+            font-size: 13.5px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            margin-bottom: 1px;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .sb-item:hover {
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+        }
+        .sb-item.active {
+            background: rgba(47, 102, 240, .22);
+            color: #fff;
+            border-color: rgba(75, 124, 240, .35);
+        }
+        .sb-item.active .sb-icon {
+            color: #7ba1ff;
+        }
+        .sb-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8fa3d1;
+        }
+        .sb-icon svg {
+            width: 17px;
+            height: 17px;
+            opacity: .85;
+        }
+        .sb-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #sidebar.collapsed .sb-label {
+            display: none;
+        }
+        #sidebar.collapsed .sb-item {
+            justify-content: center;
+        }
+        .sb-badge {
+            margin-left: auto;
+            background: var(--blue-600);
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 700;
+            border-radius: 20px;
+            padding: 1px 7px;
+        }
+        #sidebar.collapsed .sb-badge {
+            display: none;
+        }
+        .sb-footer {
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            padding: 12px 14px;
+            flex-shrink: 0;
+        }
+        .sb-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+        }
+        .sb-user:hover {
+            background: rgba(255, 255, 255, .06);
+        }
+        .sb-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #5b8dff, #7a5bff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 12.5px;
+        }
+        .sb-user-meta {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        #sidebar.collapsed .sb-user-meta {
+            display: none;
+        }
+        .sb-user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .sb-user-role {
+            font-size: 11px;
+            color: #8fa3d1;
+        }
+        .sb-collapse-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .08);
+            color: #a9b8de;
+            border-radius: 8px;
+            padding: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .sb-collapse-btn:hover {
+            background: rgba(255, 255, 255, .1);
+        }
+        #main-col {
+            flex: 1;
+            min-width: 0;
+            margin-left: var(--sidebar-w);
+            transition: margin-left .18s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        #main-col.collapsed {
+            margin-left: var(--sidebar-w-collapsed);
+        }
+        #header {
+            height: var(--header-h);
+            flex-shrink: 0;
+            background: #fff;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0 18px;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .hdr-burger {
+            display: none;
+            background: none;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+        .hdr-desktop-toggle {
+            background: none;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gray-500);
+            flex-shrink: 0;
+        }
+        .hdr-desktop-toggle:hover {
+            background: var(--gray-100);
+        }
+        .hdr-select {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            min-width: 150px;
+        }
+        .hdr-select:hover {
+            background: var(--gray-50);
+        }
+        .hdr-select-label {
+            font-size: 10px;
+            color: var(--gray-500);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .hdr-select-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        .hdr-search {
+            flex: 1;
+            max-width: 420px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .hdr-search input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            font-size: 13.5px;
+            color: var(--gray-900);
+        }
+        .hdr-search input:focus {
+            background: #fff;
+            border-color: var(--blue-500);
+        }
+        .hdr-search svg {
+            position: absolute;
+            left: 10px;
+            width: 16px;
+            height: 16px;
+            color: var(--gray-400);
+        }
+        .hdr-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--gray-600);
+            position: relative;
+        }
+        .icon-btn:hover {
+            background: var(--gray-50);
+        }
+        .icon-btn svg {
+            width: 17px;
+            height: 17px;
+        }
+        .dot-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--red-600);
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 700;
+            border-radius: 20px;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3px;
+            border: 2px solid #fff;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .btn svg {
+            width: 15px;
+            height: 15px;
+        }
+        .btn-primary {
+            background: var(--blue-600);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover {
+            background: #1d47c9;
+        }
+        .btn-secondary {
+            background: #fff;
+            border-color: var(--gray-300);
+            color: var(--gray-700);
+        }
+        .btn-secondary:hover {
+            background: var(--gray-50);
+        }
+        .btn-success {
+            background: var(--green-600);
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #0a7a4e;
+        }
+        .btn-danger {
+            background: var(--red-600);
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #a5202f;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 7px;
+        }
+        .hdr-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5b8dff, #7a5bff);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12.5px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        #content {
+            padding: 22px 26px 60px;
+            max-width: 1520px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .page-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -.01em;
+        }
+        .page-sub {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 3px;
+        }
+        .page-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .grid {
+            display: grid;
+            gap: 14px;
+        }
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        @media(max-width:1200px) {
+            .grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media(max-width:700px) {
+            .grid-4,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+        .card-pad {
+            padding: 18px;
+        }
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .card-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        .kpi-card {
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .kpi-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .kpi-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            font-weight: 600;
+        }
+        .kpi-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .kpi-value {
+            font-size: 25px;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -.02em;
+        }
+        .kpi-delta {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .kpi-delta.up {
+            color: var(--green-600);
+        }
+        .kpi-delta.down {
+            color: var(--red-600);
+        }
+        .kpi-delta.flat {
+            color: var(--gray-500);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2.5px 9px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-gray {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+        .badge-blue {
+            background: var(--blue-100);
+            color: var(--blue-600);
+        }
+        .badge-green {
+            background: var(--green-100);
+            color: var(--green-600);
+        }
+        .badge-amber {
+            background: var(--amber-100);
+            color: var(--amber-600);
+        }
+        .badge-red {
+            background: var(--red-100);
+            color: var(--red-600);
+        }
+        .badge-purple {
+            background: var(--purple-100);
+            color: var(--purple-600);
+        }
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--gray-100);
+            color: var(--gray-800);
+            vertical-align: middle;
+        }
+        tbody tr:hover {
+            background: var(--blue-50);
+        }
+        .cell-primary {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        .cell-sub {
+            font-size: 11.5px;
+            color: var(--gray-500);
+            margin-top: 1px;
+        }
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--gray-100);
+            flex-wrap: wrap;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select,
+        .filter-bar input {
+            width: auto;
+            min-width: 120px;
+            padding: 7px 10px;
+            font-size: 12.5px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-300);
+            background: #fff;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 20, 35, .5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+            backdrop-filter: blur(1px);
+        }
+        .modal {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 560px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-100);
+            flex-shrink: 0;
+        }
+        .modal-title {
+            font-size: 15.5px;
+            font-weight: 700;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-foot {
+            padding: 14px 20px;
+            border-top: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: none;
+            background: var(--gray-100);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-600);
+        }
+        .modal-close:hover {
+            background: var(--gray-200);
+        }
+        .progress {
+            height: 7px;
+            border-radius: 20px;
+            background: var(--gray-200);
+            overflow: hidden;
+        }
+        .progress>div {
+            height: 100%;
+            background: var(--blue-600);
+            border-radius: 20px;
+        }
+        .mobile-overlay {
+            display: none;
+        }
+        @media(max-width:1024px) {
+            #sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            #main-col {
+                margin-left: 0 !important;
+            }
+            .hdr-burger {
+                display: flex;
+            }
+            .hdr-desktop-toggle {
+                display: none;
+            }
+            .mobile-overlay.show {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, .4);
+                z-index: 55;
+            }
+            #content {
+                padding: 16px;
+            }
+        }
+        .muted {
+            color: var(--gray-500);
+        }
+        .small {
+            font-size: 12px;
+        }
+        .flex {
+            display: flex;
+        }
+        .gap-6 {
+            gap: 6px;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+        .gap-10 {
+            gap: 10px;
+        }
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .street-progress {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .street-progress .street-name {
+            min-width: 150px;
+            font-weight: 600;
+        }
+        .street-progress .progress {
+            flex: 1;
+        }
+        .household-card {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        .qa-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .qa-btn {
+            padding: 12px 8px;
+            border-radius: 10px;
+            border: 1.5px solid var(--gray-200);
+            background: #fff;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--gray-800);
+            text-align: center;
+        }
+        .qa-btn:hover {
+            border-color: var(--blue-500);
+            background: var(--blue-50);
+        }
+        .qa-btn svg {
+            width: 18px;
+            height: 18px;
+            color: var(--blue-600);
+        }
+        .qa-btn.success:hover {
+            border-color: var(--green-600);
+            background: var(--green-100);
+        }
+        .qa-btn.success svg {
+            color: var(--green-600);
+        }
+        .qa-btn.danger:hover {
+            border-color: var(--red-600);
+            background: var(--red-100);
+        }
+        .qa-btn.danger svg {
+            color: var(--red-600);
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0b1220 0%, #1c2f54 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 20px;
+            transition: opacity 0.5s ease;
+        }
+        #loginScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .login-box {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px 36px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+        }
+        .login-box .logo {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .login-box .logo .mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--blue-500), #5b8dff);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .login-box .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        .login-box .logo p {
+            color: var(--gray-500);
+            font-size: 13px;
+            margin-top: 2px;
+        }
+        .login-box .field {
+            margin-bottom: 16px;
+        }
+        .login-box .field label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 4px;
+        }
+        .login-box .field input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-300);
+            font-size: 14px;
+            transition: border-color .2s;
+        }
+        .login-box .field input:focus {
+            border-color: var(--blue-500);
+            outline: none;
+        }
+        .login-box .field .hint {
+            font-size: 11.5px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        .login-box .btn-login {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .login-box .error-msg {
+            background: var(--red-100);
+            color: var(--red-600);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .login-box .error-msg.show {
+            display: block;
+        }
+        .login-box .demo-creds {
+            margin-top: 20px;
+            padding: 14px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--gray-500);
+            text-align: center;
+            border: 1px dashed var(--gray-300);
+        }
+        .login-box .demo-creds code {
+            background: var(--gray-200);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--gray-800);
+            font-family: monospace;
+        }
+        .login-box .demo-creds .row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .login-box .demo-creds .row span {
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+        #toast-stack {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            background: #1f2937;
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 260px;
+            animation: toastIn .18s ease;
+        }
+        .toast.success {
+            background: #0d3d29;
+        }
+        .toast.error {
+            background: #4a1620;
+        }
+        @keyframes toastIn {
+            from {
+                transform: translateY(8px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .toast .toast-content {
+            white-space: pre-line;
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
-  <aside id="sidebar"></aside>
-  <div id="main-col">
-    <header id="header"></header>
-    <main id="content"></main>
-  </div>
-</div>
-<div id="modal-root"></div>
-<div id="toast-stack" style="position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px"></div>
-<script>
-  // ============================================================
-  // ICONS
-  // ============================================================
-  const ICONS = {
-    dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
-    voters:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.7-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17" cy="7.5" r="2.4"/><path d="M15.2 12.6c2.3.3 4.3 2.2 4.8 5"/></svg>',
-    ballot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.8"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M17 16.5l1.3 1.3L21 15"/></svg>',
-    field:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.6 7-11.4A7 7 0 0 0 5 9.6C5 15.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>',
-    map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4L3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4z"/><path d="M9 4v13M15 7v13"/></svg>',
-    turf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l4-8h10l4 8-4 8H7l-4-8z"/><circle cx="12" cy="12" r="2.3"/></svg>',
-    assign:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg>',
-    registration:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-5z"/><path d="M14 3v5h6M9 13h6M9 17h4"/></svg>',
-    comms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.4 8.7 8.7 0 0 1-4-.9L3 20l1.1-4.9A8.4 8.4 0 1 1 21 11.5z"/></svg>',
-    tasks:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 12l2.5 2.5L16 9"/></svg>',
-    reports:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
-    imports:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
-    team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c0-3.3 2.5-5.8 5.5-5.8S13.5 16.7 13.5 20"/><path d="M14.8 14.6c2.2.3 4 2.4 4.4 5.4"/></svg>',
-    settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.9 7.9 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9c.8.65 1.66 1.15 2.6 1.5L10 22h4l.5-2.5a7.9 7.9 0 0 0 2.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg>',
-    search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
-    bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
-    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',
-    menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
-    chevLeft:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>',
-    chevRight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>',
-    close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>',
-    x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-    dot:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>',
-    phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.13.99.36 1.96.7 2.9a2 2 0 0 1-.45 2.11L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.11-.45c.94.34 1.91.57 2.9.7A2 2 0 0 1 22 16.9z"/></svg>',
-    sms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.4 8.7 8.7 0 0 1-4-.9L3 20l1.1-4.9A8.4 8.4 0 1 1 21 11.5z"/></svg>',
-    door:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 21V5a2 2 0 0 1 2-2h6l4 4v14"/><path d="M6 21h12M14 12v.01"/></svg>',
-    note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></svg>',
-    clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
-    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
-    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-3.6 3-6.4 7.5-6.4s7.5 2.8 7.5 6.4"/></svg>',
-    download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
-    upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3m0 0L8 7m4-4l4 4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
-    filter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg>'
-  };
-  function ic(name){return `<span class="sb-icon">${ICONS[name]||''}</span>`}
 
-  // ============================================================
-  // UTILITIES
-  // ============================================================
-  function fmt(n){return Number(n).toLocaleString()}
-  function randOf(arr){return arr[Math.floor(Math.random()*arr.length)]}
-  function uid(p){return p+'-'+Math.random().toString(36).slice(2,8).toUpperCase()}
-  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d}
-  function fmtDate(d){const dt=new Date(d);return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
-  function fmtTime(d){const dt=new Date(d);return dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
-  function toast(msg,type='default'){const el=document.createElement('div');el.className='toast '+type;el.style.cssText='background:#1f2937;color:#fff;padding:12px 16px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:0 12px 32px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;min-width:260px;animation:toastIn .18s ease';el.innerHTML=`<span>${esc(msg)}</span>`;document.getElementById('toast-stack').appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .25s';setTimeout(()=>el.remove(),250)},3200)}
-  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-  function initials(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <div class="logo">
+                <div class="mark">RV</div>
+                <h1>ReturnVote</h1>
+                <p>Campaign Operations Platform</p>
+            </div>
+            <div id="loginError" class="error-msg">Invalid email or password. Please try again.</div>
+            <div class="field">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" placeholder="admin@campaign.org" value="admin@returnvote.com">
+            </div>
+            <div class="field">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" value="Admin123!">
+            </div>
+            <button class="btn btn-primary btn-login" onclick="handleLogin()">Sign In</button>
+            <div class="demo-creds">
+                <div style="font-weight:600;color:var(--gray-700);margin-bottom:4px;">Demo Credentials</div>
+                <div class="row">
+                    <span><strong>Admin:</strong> <code>admin@returnvote.com</code> / <code>Admin123!</code></span>
+                    <span><strong>Canvasser:</strong> <code>mary@campaign.org</code> / <code>Canvass123!</code></span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  // ============================================================
-  // DATA
-  // ============================================================
-  const WORKERS = [
-    {id:'U01',name:'Mary Jones',role:'Canvasser',ward:'Ward 3',precinct:'Precinct 4',turf:'3-17',status:'Active',lastActive:daysAgo(0),avatarColor:'#5b8dff'},
-    {id:'U02',name:'David Smith',role:'Canvasser',ward:'Ward 3',precinct:'Precinct 4',turf:'3-18',status:'Active',lastActive:daysAgo(0)},
-    {id:'U03',name:'Susan Blake',role:'Canvasser',ward:'Ward 2',precinct:'Precinct 1',turf:'2-05',status:'Active',lastActive:daysAgo(1)},
-    {id:'U04',name:'Michael Davis',role:'Canvasser',ward:'Ward 2',precinct:'Precinct 2',turf:'2-06',status:'Active',lastActive:daysAgo(0)},
-    {id:'U05',name:'Robert Taylor',role:'Canvasser',ward:'Ward 1',precinct:'Precinct 1',turf:'1-02',status:'Active',lastActive:daysAgo(2)},
-    {id:'U06',name:'Angela Wilson',role:'Ward Captain',ward:'Ward 1',precinct:'—',turf:'—',status:'Active',lastActive:daysAgo(0)},
-    {id:'U07',name:'Thomas Miller',role:'Canvasser',ward:'Ward 4',precinct:'Precinct 1',turf:'4-01',status:'Active',lastActive:daysAgo(0)},
-    {id:'U08',name:'Karen White',role:'Canvasser',ward:'Ward 4',precinct:'Precinct 5',turf:'4-03',status:'Inactive',lastActive:daysAgo(9)},
-    {id:'U09',name:'James Brown',role:'Data Manager',ward:'—',precinct:'—',turf:'—',status:'Active',lastActive:daysAgo(0)},
-    {id:'U10',name:'Linda Moore',role:'Ward Captain',ward:'Ward 3',precinct:'—',turf:'—',status:'Active',lastActive:daysAgo(0)},
-    {id:'U11',name:'Susan Clark',role:'Canvasser',ward:'Ward 5',precinct:'Precinct 2',turf:'5-01',status:'Active',lastActive:daysAgo(1)},
-    {id:'U12',name:'Admin John',role:'Campaign Admin',ward:'—',precinct:'—',turf:'—',status:'Active',lastActive:daysAgo(0)}
-  ];
+    <!-- ===== APP ===== -->
+    <div id="app" style="display:none;">
+        <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
+        <aside id="sidebar"></aside>
+        <div id="main-col">
+            <header id="header"></header>
+            <main id="content"></main>
+        </div>
+    </div>
 
-  const FIRST=['Beverly','John','Sarah','David','Mary','Susan','Michael','Robert','Angela','Thomas','Linda','James','Karen','Patricia','Charles','Nancy','Daniel','Betty','Paul','Sandra','Mark','Donna','George','Carol','Steven'];
-  const LAST=['Smith','Carter','Williams','Jones','Brown','Clark','Davis','Taylor','Wilson','Miller','Moore','White','Anderson','Harris','Martin','Thompson','Garcia','Martinez','Robinson','Lewis','Walker','Young','Allen','King','Wright'];
-  const STREETS=['Clio Road','Dayton Street','Welch Boulevard','Carpenter Road','Fenton Road','Court Street','Corunna Road','Detroit Street','Saginaw Street','Ballenger Highway','Miller Road','Lippincott Blvd'];
-  const WARDS=[{id:'W1',name:'Ward 1'},{id:'W2',name:'Ward 2'},{id:'W3',name:'Ward 3'},{id:'W4',name:'Ward 4'},{id:'W5',name:'Ward 5'}];
-  const PRECINCTS={W1:['Precinct 1','Precinct 2'],W2:['Precinct 1','Precinct 2','Precinct 3'],W3:['Precinct 3','Precinct 4'],W4:['Precinct 1','Precinct 5'],W5:['Precinct 2','Precinct 6']};
-  const BALLOT_STATUSES=['Ballot Requested','Application Received','Ballot Mailed','Outstanding','Voter Contacted','Voter Says Returned','Officially Returned','Ballot Issue','Rejected','Curing Needed','Completed'];
-  const CANVASS_STATUSES=['Not Visited','Completed','No Answer','Follow-Up','Registration Needed','Ballot Follow-Up','Spoke With Voter','Literature Dropped','Moved','Vacant','Refused','Wrong Address'];
-  const CONTACT_RESULTS=['Called - Answered','Called - No Answer','Text Sent','Wrong Number','Disconnected','Voter Says Ballot Returned','Voter Needs Assistance','Voter Will Return Ballot','Do Not Contact'];
+    <div id="modal-root"></div>
+    <div id="toast-stack"></div>
 
-  function makeVoter(i){
-    const first=FIRST[i%FIRST.length], last=LAST[(i*3+1)%LAST.length];
-    const ward=randOf(WARDS);
-    const precinct=randOf(PRECINCTS[ward.id]);
-    const street=randOf(STREETS);
-    const houseNum=randInt(100,3800);
-    const worker=randOf(WORKERS.filter(w=>w.role==='Canvasser'));
-    const regStatus = i%9===0? randOf(['Registration Needed','Registration Follow-Up','Registration Pending']) : 'Registered';
-    const mailedDaysAgo = randInt(1,26);
-    let ballotStatus; const r=Math.random();
-    if(r<0.03) ballotStatus='Ballot Requested';
-    else if(r<0.06) ballotStatus='Application Received';
-    else if(mailedDaysAgo<3) ballotStatus='Ballot Mailed';
-    else if(r<0.45) ballotStatus='Outstanding';
-    else if(r<0.55) ballotStatus='Voter Contacted';
-    else if(r<0.63) ballotStatus='Voter Says Returned';
-    else if(r<0.90) ballotStatus='Officially Returned';
-    else if(r<0.94) ballotStatus='Ballot Issue';
-    else if(r<0.97) ballotStatus='Curing Needed';
-    else ballotStatus='Completed';
-    const canvassStatus = randOf(CANVASS_STATUSES);
-    return {
-      id:i, voterId:'MI-'+(100000+i*7+ward.id.charCodeAt(1)),
-      first,last,name:first+' '+last, address:`${houseNum} ${street}`, city:'Flint, MI 4850'+(ward.id[1]),
-      ward:ward.name, wardId:ward.id, precinct, street,
-      phone:`810-555-${String(1000+i*7).slice(-4)}`, email:`${first.toLowerCase()}.${last.toLowerCase()}@example.com`,
-      registration:regStatus, ballotStatus,
-      ballotMailedDate: (ballotStatus==='Ballot Requested'||ballotStatus==='Application Received')? null : daysAgo(mailedDaysAgo),
-      ballotReturnedDate: (ballotStatus==='Officially Returned'||ballotStatus==='Completed')? daysAgo(randInt(0,mailedDaysAgo-1)) : null,
-      voterSaysReturnedDate: ballotStatus==='Voter Says Returned' ? daysAgo(randInt(0,mailedDaysAgo-1)) : null,
-      canvassStatus, assignedWorker: worker.name, lastContact: Math.random()>0.15 ? daysAgo(randInt(0,20)) : null,
-      dnc: i%23===0, notes: i%7===0 ? 'Prefers evening calls after 5pm.' : '', household: Math.random()>0.6 ? 2 : 1,
-      contacts: [],
-      registrationAssisted: i%12===0 ? 'Registration Form Provided' : (i%15===0 ? 'Registration Assistance Provided' : null),
-      registrationFollowUp: i%18===0 ? 'Follow-up scheduled' : null
-    };
-  }
-  const VOTERS = Array.from({length:120},(_,i)=>makeVoter(i+1));
+    <script>
+        // ============================================================
+        // AUTH SYSTEM
+        // ============================================================
+        const USERS = [{
+            id: 'U001',
+            name: 'Admin John',
+            email: 'admin@returnvote.com',
+            password: 'Admin123!',
+            role: 'Campaign Admin',
+            ward: '—',
+            avatarColor: '#5b8dff'
+        }, {
+            id: 'U002',
+            name: 'Mary Jones',
+            email: 'mary@campaign.org',
+            password: 'Canvass123!',
+            role: 'Canvasser',
+            ward: 'Ward 3',
+            avatarColor: '#2f9e6f'
+        }, {
+            id: 'U003',
+            name: 'David Smith',
+            email: 'david@campaign.org',
+            password: 'Canvass123!',
+            role: 'Canvasser',
+            ward: 'Ward 3',
+            avatarColor: '#e08a2f'
+        }, {
+            id: 'U004',
+            name: 'Susan Blake',
+            email: 'susan@campaign.org',
+            password: 'Canvass123!',
+            role: 'Canvasser',
+            ward: 'Ward 2',
+            avatarColor: '#7a5bff'
+        }, {
+            id: 'U005',
+            name: 'Angela Wilson',
+            email: 'angela@campaign.org',
+            password: 'Canvass123!',
+            role: 'Ward Captain',
+            ward: 'Ward 1',
+            avatarColor: '#e0526e'
+        }];
 
-  // Add contact history to all voters
-  VOTERS.forEach(v=>{
-    if(Math.random()>0.3){
-      v.contacts.push({type:'Call',result:randOf(CONTACT_RESULTS),date:daysAgo(randInt(1,10)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:''});
-    }
-    if(Math.random()>0.5){
-      v.contacts.push({type:'Door',result:randOf(['Literature Dropped','Spoke With Voter','No Answer','Registration Needed']),date:daysAgo(randInt(1,15)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:''});
-    }
-    if(Math.random()>0.7){
-      v.contacts.push({type:'SMS',result:'Sent',date:daysAgo(randInt(1,8)),worker:randOf(WORKERS.filter(w=>w.role==='Canvasser')).name,note:'Reminder sent'});
-    }
-    v.contacts.sort((a,b)=>new Date(b.date)-new Date(a.date));
-  });
+        let currentUser = null;
+        let sessionTimeout = null;
 
-  let TASKS = [
-    {id:uid('T'),title:'Call Beverly Smith tomorrow',voter:'Beverly Smith',assigned:'Mary Jones',due:daysAgo(-1),priority:'High',status:'Open'},
-    {id:uid('T'),title:'Follow up on registration for John Carter',voter:'John Carter',assigned:'Angela Wilson',due:daysAgo(-2),priority:'Medium',status:'Open'},
-    {id:uid('T'),title:'Confirm ballot cure for Sarah Williams',voter:'Sarah Williams',assigned:'Linda Moore',due:daysAgo(0),priority:'High',status:'In Progress'},
-    {id:uid('T'),title:'Re-attempt door at 1207 Clio Road',voter:'David Jones',assigned:'David Smith',due:daysAgo(-3),priority:'Low',status:'Open'},
-    {id:uid('T'),title:'Chase outstanding ballot — Mary Brown',voter:'Mary Brown',assigned:'Susan Blake',due:daysAgo(2),priority:'High',status:'Overdue'},
-    {id:uid('T'),title:'Verify address for Michael Davis',voter:'Michael Davis',assigned:'Robert Taylor',due:daysAgo(-5),priority:'Medium',status:'Completed'},
-    {id:uid('T'),title:'Send SMS reminder — Ward 3 outstanding list',voter:'—',assigned:'Mary Jones',due:daysAgo(-1),priority:'Medium',status:'Open'},
-    {id:uid('T'),title:'Review 42 flagged ballot records',voter:'—',assigned:'James Brown',due:daysAgo(0),priority:'High',status:'In Progress'}
-  ];
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
 
-  let NOTIFICATIONS = [
-    {id:uid('N'),title:'50 voters assigned to you',body:'New chase-list voters assigned in Ward 3.',time:daysAgo(0),read:false},
-    {id:uid('N'),title:'12 voters from your list officially returned ballots',body:'Reconciliation import updated ballot statuses.',time:daysAgo(0),read:false},
-    {id:uid('N'),title:'148 additional ballots returned since previous import',body:'County file IMP-1829 processed successfully.',time:daysAgo(1),read:false},
-    {id:uid('N'),title:'42 ballot records require review',body:'Unmatched rows from the latest AV return file.',time:daysAgo(1),read:true},
-    {id:uid('N'),title:'312 ballots mailed more than 14 days ago remain outstanding',body:'Priority chase list updated.',time:daysAgo(2),read:false}
-  ];
+            const user = USERS.find(u => u.email === email && u.password === password);
 
-  const TURFS = [
-    {id:'3-17',ward:'Ward 3',streets:['Clio Road 1200–1800','Dayton Street 400–900','Welch Boulevard 2100–2500'],assigned:['Mary Jones','Susan Blake'],addresses:183,attempted:134,progress:73},
-    {id:'3-18',ward:'Ward 3',streets:['Court Street 100–600','Saginaw Street 900–1300'],assigned:['David Smith'],addresses:142,attempted:88,progress:62},
-    {id:'2-05',ward:'Ward 2',streets:['Carpenter Road 500–1100'],assigned:['Susan Blake'],addresses:96,attempted:70,progress:73},
-    {id:'2-06',ward:'Ward 2',streets:['Fenton Road 200–800'],assigned:['Michael Davis'],addresses:120,attempted:52,progress:43},
-    {id:'1-02',ward:'Ward 1',streets:['Detroit Street 300–900'],assigned:['Robert Taylor'],addresses:88,attempted:81,progress:92},
-    {id:'4-01',ward:'Ward 4',streets:['Ballenger Highway 1000–1500'],assigned:['Thomas Miller'],addresses:110,attempted:40,progress:36},
-    {id:'4-03',ward:'Ward 4',streets:['Miller Road 200–700'],assigned:['Karen White'],addresses:75,attempted:20,progress:27},
-    {id:'5-01',ward:'Ward 5',streets:['Lippincott Blvd 100–500'],assigned:['Susan Clark'],addresses:100,attempted:37,progress:37}
-  ];
+            if (!user) {
+                errorEl.classList.add('show');
+                setTimeout(() => errorEl.classList.remove('show'), 3000);
+                return;
+            }
 
-  const IMPORTS = [
-    {id:'IMP-1829',filename:'MI_AV_Return_File_1019.csv',type:'AV Return File',records:892,status:'Completed',date:daysAgo(0),matched:841,errors:20},
-    {id:'IMP-1828',filename:'Genesee_County_Voter_Export.xlsx',type:'Voter Export',records:4200,status:'Completed',date:daysAgo(3),matched:4200,errors:0},
-    {id:'IMP-1827',filename:'Campaign_CRM_Export_Oct.csv',type:'CRM Export',records:2540,status:'Completed',date:daysAgo(5),matched:2412,errors:128},
-    {id:'IMP-1826',filename:'AV_Applications_Batch3.csv',type:'AV Return File',records:610,status:'Completed',date:daysAgo(8),matched:598,errors:12}
-  ];
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('app').style.display = 'flex';
 
-  let AUDIT_LOG = [
-    {id:'A1',date:daysAgo(0),time:'3:42 PM',user:'John Smith',action:'Ballot Returned',detail:'Beverly Smith: Outstanding → Officially Returned (Entered by: John Smith)'},
-    {id:'A2',date:daysAgo(0),time:'2:15 PM',user:'Admin John',action:'Reconciliation',detail:'IMP-1829 — 892 records, 841 matched, 31 already returned, 20 errors'},
-    {id:'A3',date:daysAgo(0),time:'11:08 AM',user:'Mary Jones',action:'Canvass Update',detail:'John Carter — Literature Dropped (Door contact)'},
-    {id:'A4',date:daysAgo(1),time:'5:51 PM',user:'Linda Moore',action:'Turf Assignment',detail:'Turf 3-18 assigned to David Smith (142 addresses)'},
-    {id:'A5',date:daysAgo(1),time:'4:20 PM',user:'James Brown',action:'DNC Added',detail:'Karen White added to Do Not Contact list'},
-    {id:'A6',date:daysAgo(1),time:'1:05 PM',user:'Admin John',action:'Export',detail:'Outstanding Ballots — Ward 3 (445 records exported)'},
-    {id:'A7',date:daysAgo(2),time:'9:30 AM',user:'Susan Blake',action:'Voter Created',detail:'Added Patricia Harris to database'},
-    {id:'A8',date:daysAgo(2),time:'8:02 AM',user:'Admin John',action:'Settings',detail:'Updated Ballot Chase Queue automation rule'}
-  ];
+            // Start session timeout (30 minutes)
+            resetSessionTimeout();
 
-  // ============================================================
-  // SIDEBAR & HEADER
-  // ============================================================
-  function renderSidebar(){
-    const nav = [
-      {label:'Dashboard', key:'dashboard', icon:'dashboard'},
-      {label:'Voters', key:'voters', icon:'voters'},
-      {label:'Ballot Tracker', key:'ballot', icon:'ballot'},
-      {label:'Field Map', key:'map', icon:'map'},
-      {label:'Turfs', key:'turfs', icon:'turf'},
-      {label:'Assignments', key:'assignments', icon:'assign'},
-      {label:'Team', key:'team', icon:'team'},
-      {label:'Tasks', key:'tasks', icon:'tasks', badge:'4'},
-      {label:'Imports', key:'imports', icon:'imports'},
-      {label:'Chase List', key:'chase', icon:'reports', badge:'312'},
-      {label:'Field Ops', key:'fieldops', icon:'field'},
-      {label:'Settings', key:'settings', icon:'settings'}
-    ];
-    let html = `<div class="sb-brand"><div class="sb-brand-mark">RV</div><div class="sb-brand-text">ReturnVote<small>Campaign Operations</small></div></div>
-      <nav class="sb-nav"><div class="sb-section-label">Menu</div>`;
-    nav.forEach(item=>{
-      const active = window.currentPage===item.key ? 'active' : '';
-      const badge = item.badge ? `<span class="sb-badge">${item.badge}</span>` : '';
-      html += `<div class="sb-item ${active}" data-page="${item.key}">${ic(item.icon)}<span class="sb-label">${item.label}</span>${badge}</div>`;
-    });
-    html += `</nav>
-      <div class="sb-footer">
-        <div class="sb-user"><div class="sb-avatar">AJ</div><div class="sb-user-meta"><div class="sb-user-name">Admin John</div><div class="sb-user-role">Campaign Admin</div></div></div>
-        <button class="sb-collapse-btn" onclick="toggleSidebar()">${ic('chevLeft')} Collapse</button>
-      </div>`;
-    document.getElementById('sidebar').innerHTML = html;
-    document.querySelectorAll('.sb-item[data-page]').forEach(el=>{
-      el.addEventListener('click',()=>{window.currentPage=el.dataset.page; renderPage(); closeMobileSidebar();});
-    });
-  }
+            toast(`Welcome back, ${user.name}!`, 'success');
 
-  function renderHeader(){
-    const unread = NOTIFICATIONS.filter(n=>!n.read).length;
-    document.getElementById('header').innerHTML = `
-      <button class="hdr-burger" onclick="toggleMobileSidebar()">${ic('menu')}</button>
-      <button class="hdr-desktop-toggle" onclick="toggleSidebar()">${ic('menu')}</button>
-      <div class="hdr-select"><span class="hdr-select-label">Campaign</span><span class="hdr-select-value">Flint GOTV 2026</span></div>
-      <div class="hdr-search">${ic('search')}<input type="text" placeholder="Search voters, tasks, streets..." id="globalSearch" onkeyup="if(event.key==='Enter'){globalSearch(this.value)}"></div>
-      <div class="hdr-right">
-        <button class="icon-btn" onclick="showNotifications()">${ic('bell')}${unread?`<span class="dot-badge">${unread}</span>`:''}</button>
-        <button class="btn btn-primary btn-sm" onclick="showQuickAddVoter()">${ic('plus')} Add Voter</button>
-        <div class="hdr-avatar">AJ</div>
-      </div>
-    `;
-  }
+            // Log login
+            AUDIT_LOG.unshift({
+                id: uid('A'),
+                date: new Date(),
+                time: fmtTime(new Date()),
+                user: user.name,
+                action: 'Login',
+                detail: `Logged in as ${user.role}`
+            });
 
-  function closeMobileSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('mobileOverlay').classList.remove('show');}
-  function toggleMobileSidebar(){document.getElementById('sidebar').classList.toggle('mobile-open');document.getElementById('mobileOverlay').classList.toggle('show');}
-  function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');document.getElementById('main-col').classList.toggle('collapsed');}
-  window.currentPage = 'dashboard';
-  window.toggleSidebar = toggleSidebar;
-  window.closeMobileSidebar = closeMobileSidebar;
-  window.toggleMobileSidebar = toggleMobileSidebar;
-
-  function globalSearch(query){
-    if(!query||query.length<2){toast('Please enter at least 2 characters');return;}
-    // Check if it's a street search
-    const streetMatch = STREETS.find(s=>s.toLowerCase().includes(query.toLowerCase()));
-    if(streetMatch){
-      const results = VOTERS.filter(v=>v.street===streetMatch);
-      toast(`📍 ${streetMatch}: ${results.length} voters found`);
-      window.currentPage='fieldops';
-      renderPage();
-      setTimeout(()=>{
-        const rows = document.querySelectorAll('#streetTable tbody tr');
-        rows.forEach((row,i)=>{
-          if(i<results.length) row.style.background='var(--blue-50)';
-        });
-      },100);
-      return;
-    }
-    const results = VOTERS.filter(v=>v.name.toLowerCase().includes(query.toLowerCase())||v.address.toLowerCase().includes(query.toLowerCase())||v.phone.includes(query)||v.voterId.toLowerCase().includes(query.toLowerCase()));
-    if(results.length===0){toast('No voters found matching "'+query+'"');return;}
-    toast(`Found ${results.length} voters matching "${query}"`);
-    window.currentPage='voters';
-    renderPage();
-    setTimeout(()=>{
-      const rows = document.querySelectorAll('#voterTable tbody tr');
-      rows.forEach((row,i)=>{
-        if(i<results.length) row.style.background='var(--blue-50)';
-      });
-    },100);
-  }
-
-  function showNotifications(){
-    const html = NOTIFICATIONS.map(n=>`
-      <div style="padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;gap:10px;${n.read?'':'background:var(--blue-50)'}">
-        ${!n.read?'<span style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);margin-top:5px;flex-shrink:0"></span>':''}
-        <div><div style="font-weight:600">${n.title}</div><div style="font-size:12px;color:var(--gray-500)">${n.body}</div><div style="font-size:10px;color:var(--gray-400);margin-top:4px">${fmtDate(n.time)}</div></div>
-      </div>
-    `).join('');
-    toast('📬 Notifications\n'+html, 'default');
-  }
-
-  function showQuickAddVoter(){
-    toast('📝 Quick Add Voter form would open here');
-  }
-
-  // ============================================================
-  // PAGE RENDERERS
-  // ============================================================
-  function renderPage(){
-    const map = {
-      dashboard:renderDashboard,
-      voters:renderVoters,
-      ballot:renderBallot,
-      map:renderMap,
-      turfs:renderTurfs,
-      assignments:renderAssignments,
-      team:renderTeam,
-      tasks:renderTasks,
-      imports:renderImports,
-      chase:renderChase,
-      fieldops:renderFieldOps,
-      settings:renderSettings
-    };
-    const content = document.getElementById('content');
-    content.innerHTML = (map[window.currentPage]||renderDashboard)();
-    document.querySelectorAll('.sb-item[data-page]').forEach(el=>{
-      el.classList.toggle('active', el.dataset.page===window.currentPage);
-    });
-  }
-
-  // ===== DASHBOARD =====
-  function renderDashboard(){
-    const total = VOTERS.length;
-    const returned = VOTERS.filter(v=>v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed').length;
-    const outstanding = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed').length;
-    const tasksOpen = TASKS.filter(t=>t.status!=='Completed').length;
-    const contacted = VOTERS.filter(v=>v.canvassStatus!=='Not Visited').length;
-    const vsReturned = VOTERS.filter(v=>v.ballotStatus==='Voter Says Returned').length;
-    return `
-      <div class="page-head"><div><div class="page-title">Dashboard</div><div class="page-sub">Campaign operations overview · Flint GOTV 2026</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Refreshing data')">${ic('clock')} Refresh</button><button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('check')} Run Reconciliation</button></div></div>
-      <div class="grid grid-4">
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters</span><span class="kpi-icon" style="background:#e7edfd;color:#2454e0">${ic('voters')}</span></div><div class="kpi-value">${fmt(total)}</div><div class="kpi-delta up">+12 this week</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Officially Returned</span><span class="kpi-icon" style="background:#e3f7ec;color:#0a8f5b">${ic('check')}</span></div><div class="kpi-value">${fmt(returned)}</div><div class="kpi-delta up">${Math.round(returned/total*100)}%</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voter Says Returned</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('note')}</span></div><div class="kpi-value">${fmt(vsReturned)}</div><div class="kpi-delta flat">${Math.round(vsReturned/total*100)}%</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Outstanding</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('clock')}</span></div><div class="kpi-value">${fmt(outstanding)}</div><div class="kpi-delta down">${Math.round(outstanding/total*100)}%</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-top:14px">
-        <div class="card"><div class="card-head"><span class="card-title">Recent Activity</span></div><div class="card-pad">
-          ${AUDIT_LOG.slice(0,6).map(a=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)"><span><strong>${a.user}</strong> ${a.action}</span><span class="muted small">${fmtDate(a.date)} ${a.time||''}</span></div>`).join('')}
-        </div></div>
-        <div class="card"><div class="card-head"><span class="card-title">Open Tasks</span><span class="badge badge-amber">${tasksOpen}</span></div><div class="card-pad">
-          ${TASKS.filter(t=>t.status!=='Completed').slice(0,5).map(t=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)"><span>${esc(t.title)}</span><span class="badge badge-${t.status==='Overdue'?'red':t.status==='In Progress'?'amber':'blue'}">${t.status}</span></div>`).join('')}
-          ${TASKS.filter(t=>t.status!=='Completed').length>5?`<div class="muted small" style="text-align:center;padding-top:6px">+${TASKS.filter(t=>t.status!=='Completed').length-5} more</div>`:''}
-        </div></div>
-      </div>
-    `;
-  }
-
-  // ===== VOTERS =====
-  function renderVoters(){
-    let rows = VOTERS.slice(0,25).map(v=>`
-      <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
-        <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
-        <td>${v.ward}</td>
-        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
-        <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
-        <td>${v.assignedWorker}</td>
-        <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
-        <td>${v.dnc?'🚫':''}</td>
-      </tr>
-    `).join('');
-    return `
-      <div class="page-head"><div><div class="page-title">Voters</div><div class="page-sub">${fmt(VOTERS.length)} total voters</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('New Voter')">${ic('plus')} Add Voter</button><button class="btn btn-secondary btn-sm" onclick="toast('Export CSV')">${ic('download')} Export</button></div></div>
-      <div class="card"><div class="table-toolbar"><div class="filter-bar">
-        <select id="filterWard" onchange="filterVoters()"><option value="">All Wards</option>${WARDS.map(w=>`<option value="${w.name}">${w.name}</option>`).join('')}</select>
-        <select id="filterStatus" onchange="filterVoters()"><option value="">All Status</option>${BALLOT_STATUSES.slice(0,7).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
-        <select id="filterCanvass" onchange="filterVoters()"><option value="">All Canvass</option>${CANVASS_STATUSES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
-        <select id="filterReg" onchange="filterVoters()"><option value="">All Registration</option><option value="Registered">Registered</option><option value="Registration Needed">Registration Needed</option><option value="Registration Follow-Up">Follow-Up</option></select>
-        <input type="text" placeholder="Search..." id="voterSearch" onkeyup="filterVoters()">
-      </div></div>
-      <div class="table-wrap"><table id="voterTable"><thead><tr><th>Voter</th><th>Ward</th><th>Ballot Status</th><th>Registration</th><th>Worker</th><th>Canvass</th><th>DNC</th></tr></thead><tbody id="voterTableBody">${rows}</tbody></table></div></div>
-    `;
-  }
-
-  window.filterVoters = function(){
-    const ward = document.getElementById('filterWard')?.value||'';
-    const status = document.getElementById('filterStatus')?.value||'';
-    const canvass = document.getElementById('filterCanvass')?.value||'';
-    const reg = document.getElementById('filterReg')?.value||'';
-    const search = document.getElementById('voterSearch')?.value?.toLowerCase()||'';
-    let filtered = VOTERS;
-    if(ward) filtered = filtered.filter(v=>v.ward===ward);
-    if(status) filtered = filtered.filter(v=>v.ballotStatus===status);
-    if(canvass) filtered = filtered.filter(v=>v.canvassStatus===canvass);
-    if(reg) filtered = filtered.filter(v=>v.registration===reg);
-    if(search) filtered = filtered.filter(v=>v.name.toLowerCase().includes(search)||v.address.toLowerCase().includes(search)||v.phone.includes(search)||v.voterId.toLowerCase().includes(search));
-    const tbody = document.getElementById('voterTableBody');
-    if(!tbody) return;
-    tbody.innerHTML = filtered.slice(0,25).map(v=>`
-      <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
-        <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
-        <td>${v.ward}</td>
-        <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
-        <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
-        <td>${v.assignedWorker}</td>
-        <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
-        <td>${v.dnc?'🚫':''}</td>
-      </tr>
-    `).join('');
-    if(filtered.length===0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-500)">No voters match your filters</td></tr>';
-  };
-
-  window.showVoterDetail = function(id){
-    const v = VOTERS.find(v=>v.id===id);
-    if(!v) return;
-    const contacts = v.contacts||[];
-    const contactHtml = contacts.slice(0,8).map(c=>`
-      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--gray-50);font-size:13px">
-        <span><span class="badge badge-${c.type==='Call'?'blue':c.type==='Door'?'amber':'green'}">${c.type}</span> ${c.result}</span>
-        <span class="muted small">${fmtDate(c.date)} · ${c.worker}</span>
-      </div>
-    `).join('');
-    const regAssist = v.registrationAssisted ? `📋 Registration Assistance: ${v.registrationAssisted}\n` : '';
-    const regFollow = v.registrationFollowUp ? `📋 Registration Follow-Up: ${v.registrationFollowUp}\n` : '';
-    toast(`📋 ${v.name}\n📍 ${v.address}\n📞 ${v.phone}\n🗳️ ${v.ballotStatus}\n📬 Voter Says Returned: ${v.voterSaysReturnedDate?fmtDate(v.voterSaysReturnedDate):'No'}\n📬 Officially Returned: ${v.ballotReturnedDate?fmtDate(v.ballotReturnedDate):'No'}\n👤 ${v.assignedWorker}\n${regAssist}${regFollow}${v.dnc?'🚫 Do Not Contact\n':''}${v.notes? '📝 '+v.notes:''}\n${contacts.length>0?'\n📞 Recent Contacts:\n'+contactHtml:''}`);
-  };
-
-  // ===== BALLOT =====
-  function renderBallot(){
-    const returned = VOTERS.filter(v=>v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed');
-    const outstanding = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed');
-    const vsReturned = VOTERS.filter(v=>v.ballotStatus==='Voter Says Returned');
-    const tenDayOut = VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate));
-    return `
-      <div class="page-head"><div><div class="page-title">Ballot Tracker</div><div class="page-sub">${fmt(returned.length)} official returns · ${fmt(vsReturned.length)} voter-says-returned · ${fmt(outstanding.length)} outstanding</div></div><div class="page-actions"><button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('upload')} Reconcile Returns</button></div></div>
-      <div class="grid grid-2">
-        <div class="card"><div class="card-head"><span class="card-title">Returned by Ward</span></div><div class="card-pad">
-          ${WARDS.map(w=>{const cnt=VOTERS.filter(v=>v.wardId===w.id && (v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed')).length;const totalW=VOTERS.filter(v=>v.wardId===w.id).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${w.name}</span><span>${cnt} / ${totalW} (${Math.round(cnt/totalW*100||0)}%)</span></div>`}).join('')}
-        </div></div>
-        <div class="card"><div class="card-head"><span class="card-title">Ballot Status Distribution</span></div><div class="card-pad">
-          ${BALLOT_STATUSES.slice(0,8).map(s=>{const cnt=VOTERS.filter(v=>v.ballotStatus===s).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`}).join('')}
-        </div></div>
-      </div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">🚨 Priority: Ballots Mailed >10 Days — Not Returned</span><span class="badge badge-red">${tenDayOut.length}</span></div><div class="card-pad">
-        ${tenDayOut.slice(0,10).map(v=>`
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)">
-            <span>${esc(v.name)} — ${v.ward}</span>
-            <span class="muted small">Mailed ${fmtDate(v.ballotMailedDate)} (${Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24))} days)</span>
-          </div>
-        `).join('')}
-        ${tenDayOut.length>10?`<div class="muted small" style="text-align:center;padding-top:6px">+${tenDayOut.length-10} more</div>`:''}
-      </div></div>
-    `;
-  }
-
-  // ===== RECONCILIATION =====
-  window.runReconciliation = function(){
-    const processed = 892;
-    let matched = 0;
-    let alreadyReturned = 0;
-    let errors = 0;
-    VOTERS.forEach(v=>{
-      if(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'||v.ballotStatus==='Voter Says Returned'){
-        if(Math.random()>0.15){
-          const oldStatus = v.ballotStatus;
-          v.ballotStatus = 'Officially Returned';
-          v.ballotReturnedDate = new Date();
-          matched++;
-          AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'System',action:'Ballot Returned',detail:`${v.name}: ${oldStatus} → Officially Returned (Reconciliation)`});
-        } else {
-          errors++;
+            renderSidebar();
+            renderHeader();
+            renderPage();
         }
-      } else if(v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'){
-        alreadyReturned++;
-      }
-    });
-    const msg = `📊 Reconciliation Complete\n${processed} records processed\n${matched} voters matched → changed to Returned\n${alreadyReturned} already marked Returned\n${errors} records could not be matched`;
-    toast(msg, 'success');
-    renderPage();
-  };
 
-  // ===== MAP =====
-  function renderMap(){
-    return `
-      <div class="page-head"><div><div class="page-title">Field Map</div><div class="page-sub">Ward 3 · Precinct 4 · ${VOTERS.filter(v=>v.wardId==='W3').length} voters</div></div></div>
-      <div class="card" style="height:500px;display:flex;align-items:center;justify-content:center;background:#e7ecf5;border-radius:var(--radius-lg);border:1px solid var(--gray-200);flex-direction:column;gap:16px">
-        <div style="font-size:40px;color:#6b7280">🗺️</div>
-        <div style="font-weight:600;color:#374151">Interactive Map View — ${WORKERS.filter(w=>w.role==='Canvasser').length} canvassers active</div>
-        <div class="flex gap-8"><span class="badge badge-green">● ${VOTERS.filter(v=>v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter').length} Completed</span><span class="badge badge-amber">● ${VOTERS.filter(v=>v.canvassStatus==='Not Visited').length} Pending</span><span class="badge badge-red">● ${VOTERS.filter(v=>v.dnc).length} DNC</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-          ${STREETS.slice(0,8).map(s=>{
-            const cnt = VOTERS.filter(v=>v.street===s).length;
-            const done = VOTERS.filter(v=>v.street===s && v.canvassStatus!=='Not Visited').length;
-            return `<span class="badge badge-${done===cnt?'green':done>0?'amber':'gray'}">${s.split(' ')[0]} ${done}/${cnt}</span>`;
-          }).join('')}
-        </div>
-        <button class="btn btn-secondary" onclick="toast('Opening interactive map with street-level data')">Open Interactive Map</button>
-      </div>
-      <div class="grid grid-2" style="margin-top:14px">
-        <div class="card"><div class="card-head"><span class="card-title">Street Coverage</span></div><div class="card-pad">
-          ${STREETS.slice(0,8).map(s=>{
-            const cnt = VOTERS.filter(v=>v.street===s).length;
-            const done = VOTERS.filter(v=>v.street===s && v.canvassStatus!=='Not Visited').length;
-            const pct = cnt?Math.round(done/cnt*100):0;
-            return `<div class="street-progress"><span class="street-name">${s}</span><div class="progress"><div style="width:${pct}%"></div></div><span class="small">${done}/${cnt}</span></div>`;
-          }).join('')}
-        </div></div>
-        <div class="card"><div class="card-head"><span class="card-title">Canvass Results</span></div><div class="card-pad">
-          ${CANVASS_STATUSES.slice(0,8).map(s=>{
-            const cnt = VOTERS.filter(v=>v.canvassStatus===s).length;
-            return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`;
-          }).join('')}
-        </div></div>
-      </div>
-    `;
-  }
+        function resetSessionTimeout() {
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(() => {
+                toast('Session expired. Please log in again.', 'error');
+                logout();
+            }, 30 * 60 * 1000); // 30 minutes
+        }
 
-  // ===== TURFS =====
-  function renderTurfs(){
-    return `
-      <div class="page-head"><div><div class="page-title">Turfs</div><div class="page-sub">${TURFS.length} turf areas · ${TURFS.reduce((a,t)=>a+t.addresses,0)} addresses</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Create new turf')">${ic('plus')} New Turf</button></div></div>
-      <div class="grid grid-2">
-        ${TURFS.map(t=>`
-          <div class="card card-pad">
-            <div style="display:flex;justify-content:space-between"><strong>${t.id}</strong><span class="badge badge-blue">${t.ward}</span></div>
-            <div class="small muted">${t.streets.join(', ')}</div>
-            <div class="small">Assigned: ${t.assigned.join(', ')}</div>
-            <div style="margin-top:8px"><div class="progress"><div style="width:${t.progress}%"></div></div></div>
-            <div class="flex-between small" style="margin-top:4px"><span>${t.attempted}/${t.addresses}</span><span>${t.progress}%</span></div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
+        function logout() {
+            currentUser = null;
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginPassword').value = '';
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            toast('Logged out successfully', 'default');
+        }
 
-  // ===== ASSIGNMENTS =====
-  function renderAssignments(){
-    return `<div class="page-head"><div><div class="page-title">Assignments</div><div class="page-sub">Manage worker turf assignments · Batch assign available</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Batch assignment: Select workers and voters')">${ic('assign')} Batch Assign</button></div></div>
-      <div class="card"><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Turf</th><th>Ward</th><th>Addresses</th><th>Progress</th><th>Status</th></tr></thead><tbody>
-        ${WORKERS.filter(w=>w.role==='Canvasser').map(w=>{
-          const turf = TURFS.find(t=>t.assigned.includes(w.name));
-          return `<tr><td><strong>${w.name}</strong></td><td>${turf?turf.id:'—'}</td><td>${w.ward}</td><td>${turf?turf.addresses:'—'}</td><td>${turf?turf.progress+'%':'—'}</td><td><span class="badge badge-${w.status==='Active'?'green':'gray'}">${w.status}</span></td></tr>`;
-        }).join('')}
-      </tbody></table></div></div>`;
-  }
+        // Enter key on login
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('loginEmail').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+        });
 
-  // ===== TEAM =====
-  function renderTeam(){
-    return `<div class="page-head"><div><div class="page-title">Team</div><div class="page-sub">${WORKERS.length} members · ${WORKERS.filter(w=>w.status==='Active').length} active</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Add team member')">${ic('plus')} Add Member</button></div></div>
-      <div class="grid grid-3">${WORKERS.map(w=>`
-        <div class="card card-pad"><div style="display:flex;align-items:center;gap:10px"><div class="sb-avatar" style="background:${w.avatarColor||'#5b8dff'}">${initials(w.name)}</div><div><strong>${w.name}</strong><div class="muted small">${w.role} · ${w.status}</div><div class="muted small">${w.ward!=='—'?w.ward:''} ${w.precinct!=='—'?w.precinct:''}</div></div></div></div>
-      `).join('')}</div>`;
-  }
+        // ============================================================
+        // ICONS
+        // ============================================================
+        const ICONS = {
+            dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+            voters: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.7-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17" cy="7.5" r="2.4"/><path d="M15.2 12.6c2.3.3 4.3 2.2 4.8 5"/></svg>',
+            ballot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.8"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M17 16.5l1.3 1.3L21 15"/></svg>',
+            field: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.6 7-11.4A7 7 0 0 0 5 9.6C5 15.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>',
+            map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4L3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4z"/><path d="M9 4v13M15 7v13"/></svg>',
+            turf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l4-8h10l4 8-4 8H7l-4-8z"/><circle cx="12" cy="12" r="2.3"/></svg>',
+            assign: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/></svg>',
+            registration: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-5z"/><path d="M14 3v5h6M9 13h6M9 17h4"/></svg>',
+            comms: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.4 8.7 8.7 0 0 1-4-.9L3 20l1.1-4.9A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+            tasks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 12l2.5 2.5L16 9"/></svg>',
+            reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+            imports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+            team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c0-3.3 2.5-5.8 5.5-5.8S13.5 16.7 13.5 20"/><path d="M14.8 14.6c2.2.3 4 2.4 4.4 5.4"/></svg>',
+            settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.9 7.9 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9c.8.65 1.66 1.15 2.6 1.5L10 22h4l.5-2.5a7.9 7.9 0 0 0 2.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg>',
+            search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+            bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+            plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',
+            menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+            chevLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>',
+            chevRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>',
+            close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+            check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>',
+            x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+            dot: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>',
+            phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.13.99.36 1.96.7 2.9a2 2 0 0 1-.45 2.11L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.11-.45c.94.34 1.91.57 2.9.7A2 2 0 0 1 22 16.9z"/></svg>',
+            sms: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.4 8.7 8.7 0 0 1-4-.9L3 20l1.1-4.9A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+            door: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 21V5a2 2 0 0 1 2-2h6l4 4v14"/><path d="M6 21h12M14 12v.01"/></svg>',
+            note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></svg>',
+            clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+            trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
+            user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-3.6 3-6.4 7.5-6.4s7.5 2.8 7.5 6.4"/></svg>',
+            download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+            upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3m0 0L8 7m4-4l4 4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+            logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>'
+        };
 
-  // ===== TASKS =====
-  function renderTasks(){
-    return `<div class="page-head"><div><div class="page-title">Tasks</div><div class="page-sub">${TASKS.filter(t=>t.status!=='Completed').length} open · ${TASKS.filter(t=>t.status==='Overdue').length} overdue</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('New Task')">${ic('plus')} New Task</button></div></div>
-      <div class="card"><div class="table-wrap"><table><thead><tr><th>Task</th><th>Voter</th><th>Assigned</th><th>Due</th><th>Status</th></tr></thead><tbody>
-        ${TASKS.map(t=>`<tr><td>${esc(t.title)}</td><td>${t.voter}</td><td>${t.assigned}</td><td>${fmtDate(t.due)}</td><td><span class="badge badge-${t.status==='Overdue'?'red':t.status==='In Progress'?'amber':t.status==='Completed'?'green':'gray'}">${t.status}</span></td></tr>`).join('')}
-      </tbody></table></div></div>`;
-  }
+        function ic(name) { return `<span class="sb-icon">${ICONS[name]||''}</span>` }
 
-  // ===== IMPORTS =====
-  function renderImports(){
-    return `<div class="page-head"><div><div class="page-title">Imports & Reconciliation</div><div class="page-sub">Data import history with matching reports</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Upload CSV/Excel file with column mapping')">${ic('upload')} Upload File</button></div></div>
-      <div class="card"><div class="table-wrap"><table><thead><tr><th>File</th><th>Type</th><th>Records</th><th>Matched</th><th>Errors</th><th>Status</th><th>Date</th></tr></thead><tbody>
-        ${IMPORTS.map(i=>`<tr><td>${i.filename}</td><td>${i.type}</td><td>${i.records}</td><td>${i.matched||i.records}</td><td>${i.errors||0}</td><td><span class="badge badge-green">${i.status}</span></td><td>${fmtDate(i.date)}</td></tr>`).join('')}
-      </tbody></table></div></div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Column Mapping Example</span></div><div class="card-pad">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="small muted">Spreadsheet Column → System Field</div>
-          <div class="small muted">Example</div>
-          <div><span class="badge badge-blue">Cell Number</span> → Phone</div><div>810-555-1212</div>
-          <div><span class="badge badge-blue">AV Sent</span> → Ballot Mailed Date</div><div>10/01/2026</div>
-          <div><span class="badge badge-blue">AV Received</span> → Ballot Returned Date</div><div>10/15/2026</div>
-          <div><span class="badge badge-blue">Voter ID</span> → Voter ID</div><div>100234</div>
-        </div>
-      </div></div>`;
-  }
+        // ============================================================
+        // UTILITIES
+        // ============================================================
+        function fmt(n) { return Number(n).toLocaleString() }
 
-  // ===== CHASE LIST =====
-  function renderChase(){
-    const chaseVoters = VOTERS.filter(v=>(v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed') && v.dnc===false);
-    const byWard = WARDS.map(w=>{
-      const cnt = chaseVoters.filter(v=>v.wardId===w.id).length;
-      return {...w, count:cnt};
-    });
-    const totalChase = chaseVoters.length;
-    return `
-      <div class="page-head"><div><div class="page-title">Chase List</div><div class="page-sub">${totalChase} outstanding ballots needing follow-up · ${chaseVoters.filter(v=>v.ballotMailedDate && daysAgo(10)>new Date(v.ballotMailedDate)).length} >10 days outstanding</div></div><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="toast('Assign selected voters to worker')">${ic('assign')} Assign Selected</button><button class="btn btn-secondary btn-sm" onclick="toast('Export Chase List')">${ic('download')} Export</button></div></div>
-      <div class="grid grid-4" style="margin-bottom:14px">
-        ${byWard.map(w=>`
-          <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">${w.name}</span></div><div class="kpi-value" style="font-size:20px">${w.count}</div></div>
-        `).join('')}
-      </div>
-      <div class="card"><div class="card-head"><span class="card-title">Outstanding Ballots (Priority Order)</span><span class="badge badge-red">${totalChase}</span></div><div class="table-wrap"><table><thead><tr><th>Voter</th><th>Ward</th><th>Mailed</th><th>Days Out</th><th>Worker</th><th>Action</th></tr></thead><tbody>
-        ${chaseVoters.sort((a,b)=>new Date(a.ballotMailedDate)-new Date(b.ballotMailedDate)).slice(0,20).map(v=>{
-          const days = v.ballotMailedDate?Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24)):'—';
-          return `<tr>
-            <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
-            <td>${v.ward}</td>
-            <td>${v.ballotMailedDate?fmtDate(v.ballotMailedDate):'—'}</td>
-            <td><span class="badge badge-${days>14?'red':days>7?'amber':'gray'}">${days} days</span></td>
-            <td>${v.assignedWorker}</td>
-            <td><div style="display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'Call')">${ic('phone')}</button>
-              <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'SMS')">${ic('sms')}</button>
-              <button class="btn btn-sm btn-success" onclick="markReturned(${v.id})">${ic('check')}</button>
-            </div></td>
-          </tr>`;
-        }).join('')}
-        ${chaseVoters.length>20?`<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--gray-500)">+${chaseVoters.length-20} more outstanding ballots</td></tr>`:''}
-      </tbody></table></div></div>`;
-  }
+        function randOf(arr) { return arr[Math.floor(Math.random() * arr.length)] }
 
-  window.recordContact = function(id, type){
-    const v = VOTERS.find(v=>v.id===id);
-    if(!v) return;
-    const result = prompt(`Record ${type} contact for ${v.name}:\nChoose result: Called-Answered, Called-No Answer, Text Sent, Wrong Number, Disconnected, Voter Says Ballot Returned, Voter Needs Assistance, Voter Will Return Ballot, Do Not Contact`);
-    if(!result) return;
-    v.contacts.push({type:type,result:result,date:new Date(),worker:'Admin John',note:''});
-    if(result==='Voter Says Ballot Returned'){
-      v.ballotStatus = 'Voter Says Returned';
-      v.voterSaysReturnedDate = new Date();
-    }
-    if(result==='Do Not Contact'){
-      v.dnc = true;
-    }
-    toast(`✅ ${type} contact recorded for ${v.name}: ${result}`, 'success');
-    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Contact Recorded',detail:`${v.name}: ${type} → ${result}`});
-    renderPage();
-  };
+        function uid(p) { return p + '-' + Math.random().toString(36).slice(2, 8).toUpperCase() }
 
-  window.markReturned = function(id){
-    const v = VOTERS.find(v=>v.id===id);
-    if(!v) return;
-    const oldStatus = v.ballotStatus;
-    v.ballotStatus = 'Officially Returned';
-    v.ballotReturnedDate = new Date();
-    toast(`✅ ${v.name} marked as Officially Returned`, 'success');
-    AUDIT_LOG.unshift({id:uid('A'),date:new Date(),time:fmtTime(new Date()),user:'Admin John',action:'Ballot Returned',detail:`${v.name}: ${oldStatus} → Officially Returned (Entered by: Admin John)`});
-    renderPage();
-  };
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;',
+            '"': '&quot;', "'": '&#39;' } [c])) }
 
-  // ===== FIELD OPS =====
-  function renderFieldOps(){
-    const total = VOTERS.length;
-    const doorsAttempted = VOTERS.filter(v=>v.canvassStatus!=='Not Visited').length;
-    const contacted = VOTERS.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
-    const litDrops = VOTERS.filter(v=>v.canvassStatus==='Literature Dropped').length;
-    const regAssisted = VOTERS.filter(v=>v.registrationAssisted!==null).length;
-    const ballotFollowUps = VOTERS.filter(v=>v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed').length;
-    const territoryCompleted = Math.round(doorsAttempted/total*100);
-    return `
-      <div class="page-head"><div><div class="page-title">Field Operations</div><div class="page-sub">Canvassing data bank · Street-level tracking</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Export Field Report')">${ic('download')} Export Report</button></div></div>
-      <div class="grid grid-3">
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters in Database</span></div><div class="kpi-value" style="font-size:20px">${fmt(total)}</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Doors Attempted</span></div><div class="kpi-value" style="font-size:20px">${fmt(doorsAttempted)}</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Territory Completed</span></div><div class="kpi-value" style="font-size:20px">${territoryCompleted}%</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters Contacted</span></div><div class="kpi-value" style="font-size:20px">${fmt(contacted)}</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Literature Drops</span></div><div class="kpi-value" style="font-size:20px">${fmt(litDrops)}</div></div>
-        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Registrations Assisted</span></div><div class="kpi-value" style="font-size:20px">${fmt(regAssisted)}</div></div>
-      </div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Street-Level Tracking</span><span class="badge badge-blue">${STREETS.length} streets</span></div><div class="card-pad">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          ${STREETS.map(s=>{
-            const voters = VOTERS.filter(v=>v.street===s);
-            const totalS = voters.length;
-            const completed = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
-            const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
-            const pending = totalS - completed;
-            return `<div class="household-card">
-              <div style="display:flex;justify-content:space-between"><strong>${s}</strong><span class="badge badge-${completed===totalS?'green':completed>0?'amber':'gray'}">${completed}/${totalS}</span></div>
-              <div class="small muted">${spoke} spoke · ${pending} pending</div>
-              <div class="progress" style="margin-top:4px"><div style="width:${totalS?Math.round(completed/totalS*100):0}%"></div></div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div></div>
-      <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Canvasser Productivity</span></div><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Assigned</th><th>Attempted</th><th>Spoke</th><th>Lit Drops</th><th>No Answer</th><th>Reg Assist</th></tr></thead><tbody>
-        ${WORKERS.filter(w=>w.role==='Canvasser').slice(0,8).map(w=>{
-          const voters = VOTERS.filter(v=>v.assignedWorker===w.name);
-          const assigned = voters.length;
-          const attempted = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
-          const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
-          const lit = voters.filter(v=>v.canvassStatus==='Literature Dropped').length;
-          const noAns = voters.filter(v=>v.canvassStatus==='No Answer').length;
-          const reg = voters.filter(v=>v.registrationAssisted!==null).length;
-          return `<tr><td><strong>${w.name}</strong></td><td>${assigned}</td><td>${attempted}</td><td>${spoke}</td><td>${lit}</td><td>${noAns}</td><td>${reg}</td></tr>`;
-        }).join('')}
-      </tbody></table></div></div>`;
-  }
+        function daysAgo(n) { const d = new Date();
+            d.setDate(d.getDate() - n); return d }
 
-  // ===== SETTINGS =====
-  function renderSettings(){
-    return `<div class="page-head"><div><div class="page-title">Settings</div><div class="page-sub">Campaign configuration and automation rules</div></div></div>
-      <div class="grid grid-2">
-        <div class="card card-pad"><div class="card-title">Automation Rules</div>
-          <div style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Ballot Chase Queue (10+ days)</span><span class="badge badge-green">Enabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Registration Follow-Up</span><span class="badge badge-green">Enabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Voter-Says-Returned Reconciliation</span><span class="badge badge-green">Enabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Stale Contact Re-Queue (21+ days)</span><span class="badge badge-amber">Disabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0"><span>DNC Suppression</span><span class="badge badge-green">Enabled</span></div>
-          </div>
-        </div>
-        <div class="card card-pad"><div class="card-title">Security & Access</div>
-          <div style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>MFA Required</span><span class="badge badge-green">Enabled</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Session Timeout</span><span>60 minutes</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Audit Logging</span><span class="badge badge-green">Active</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Data Encryption</span><span class="badge badge-green">AES-256</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="card card-pad" style="margin-top:14px"><div class="card-title">Quick Actions</div>
-        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn btn-secondary" onclick="toast('Export all data')">${ic('download')} Export Database</button>
-          <button class="btn btn-secondary" onclick="toast('Backup initiated')">${ic('clock')} Backup Now</button>
-          <button class="btn btn-danger" onclick="if(confirm('Reset all demo data?')){location.reload()}">${ic('trash')} Reset Demo Data</button>
-        </div>
-      </div>`;
-  }
+        function fmtDate(d) { const dt = new Date(d); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric',
+                year: 'numeric' }) }
 
-  // ============================================================
-  // INIT
-  // ============================================================
-  renderSidebar();
-  renderHeader();
-  renderPage();
-  console.log('ReturnVote platform ready');
-</script>
+        function fmtTime(d) { const dt = new Date(d); return dt.toLocaleTimeString('en-US', { hour: 'numeric',
+                minute: '2-digit' }) }
+
+        function toast(msg, type = 'default') {
+            const el = document.createElement('div');
+            el.className = 'toast ' + type;
+            el.innerHTML = `<span class="toast-content">${esc(msg)}</span>`;
+            document.getElementById('toast-stack').appendChild(el);
+            setTimeout(() => { el.style.opacity = '0';
+                el.style.transition = 'opacity .25s';
+                setTimeout(() => el.remove(), 250) }, 3500);
+        }
+
+        function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a }
+
+        function initials(n) { return n.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() }
+
+        // ============================================================
+        // DATA
+        // ============================================================
+        // Use USERS from auth system as the team
+        const WORKERS = USERS.map(u => ({
+            id: u.id,
+            name: u.name,
+            role: u.role,
+            ward: u.ward,
+            precinct: u.ward !== '—' ? 'Precinct 1' : '—',
+            turf: u.ward !== '—' ? 'TURF-' + u.ward.replace('Ward ', '') : '—',
+            status: 'Active',
+            lastActive: daysAgo(0),
+            avatarColor: u.avatarColor
+        }));
+
+        // Add additional workers for demo
+        const EXTRA_WORKERS = [
+            { id: 'U006', name: 'Michael Davis', role: 'Canvasser', ward: 'Ward 2', precinct: 'Precinct 2',
+            turf: '2-06', status: 'Active', lastActive: daysAgo(0), avatarColor: '#e0526e' },
+            { id: 'U007', name: 'Robert Taylor', role: 'Canvasser', ward: 'Ward 1', precinct: 'Precinct 1',
+            turf: '1-02', status: 'Active', lastActive: daysAgo(2), avatarColor: '#2f9e6f' },
+            { id: 'U008', name: 'Thomas Miller', role: 'Canvasser', ward: 'Ward 4', precinct: 'Precinct 1',
+            turf: '4-01', status: 'Active', lastActive: daysAgo(0), avatarColor: '#7a5bff' },
+            { id: 'U009', name: 'Karen White', role: 'Canvasser', ward: 'Ward 4', precinct: 'Precinct 5', turf: '4-03',
+                status: 'Inactive', lastActive: daysAgo(9), avatarColor: '#e08a2f' },
+            { id: 'U010', name: 'James Brown', role: 'Data Manager', ward: '—', precinct: '—', turf: '—',
+                status: 'Active', lastActive: daysAgo(0), avatarColor: '#5b8dff' },
+            { id: 'U011', name: 'Linda Moore', role: 'Ward Captain', ward: 'Ward 3', precinct: '—', turf: '—',
+                status: 'Active', lastActive: daysAgo(0), avatarColor: '#c22a3e' },
+            { id: 'U012', name: 'Susan Clark', role: 'Canvasser', ward: 'Ward 5', precinct: 'Precinct 2', turf: '5-01',
+                status: 'Active', lastActive: daysAgo(1), avatarColor: '#6d3fce' }
+        ];
+        WORKERS.push(...EXTRA_WORKERS);
+
+        const FIRST = ['Beverly', 'John', 'Sarah', 'David', 'Mary', 'Susan', 'Michael', 'Robert', 'Angela', 'Thomas', 'Linda',
+            'James', 'Karen', 'Patricia', 'Charles', 'Nancy', 'Daniel', 'Betty', 'Paul', 'Sandra', 'Mark', 'Donna',
+            'George', 'Carol', 'Steven'
+        ];
+        const LAST = ['Smith', 'Carter', 'Williams', 'Jones', 'Brown', 'Clark', 'Davis', 'Taylor', 'Wilson', 'Miller',
+            'Moore', 'White', 'Anderson', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Lewis',
+            'Walker', 'Young', 'Allen', 'King', 'Wright'
+        ];
+        const STREETS = ['Clio Road', 'Dayton Street', 'Welch Boulevard', 'Carpenter Road', 'Fenton Road', 'Court Street',
+            'Corunna Road', 'Detroit Street', 'Saginaw Street', 'Ballenger Highway', 'Miller Road', 'Lippincott Blvd'
+        ];
+        const WARDS = [{ id: 'W1', name: 'Ward 1' }, { id: 'W2', name: 'Ward 2' }, { id: 'W3', name: 'Ward 3' }, { id: 'W4',
+                name: 'Ward 4' }, { id: 'W5', name: 'Ward 5' }];
+        const PRECINCTS = { W1: ['Precinct 1', 'Precinct 2'], W2: ['Precinct 1', 'Precinct 2', 'Precinct 3'],
+            W3: ['Precinct 3', 'Precinct 4'], W4: ['Precinct 1', 'Precinct 5'], W5: ['Precinct 2', 'Precinct 6'] };
+        const BALLOT_STATUSES = ['Ballot Requested', 'Application Received', 'Ballot Mailed', 'Outstanding',
+            'Voter Contacted', 'Voter Says Returned', 'Officially Returned', 'Ballot Issue', 'Rejected', 'Curing Needed',
+            'Completed'
+        ];
+        const CANVASS_STATUSES = ['Not Visited', 'Completed', 'No Answer', 'Follow-Up', 'Registration Needed',
+            'Ballot Follow-Up', 'Spoke With Voter', 'Literature Dropped', 'Moved', 'Vacant', 'Refused', 'Wrong Address'
+        ];
+        const CONTACT_RESULTS = ['Called - Answered', 'Called - No Answer', 'Text Sent', 'Wrong Number', 'Disconnected',
+            'Voter Says Ballot Returned', 'Voter Needs Assistance', 'Voter Will Return Ballot', 'Do Not Contact'
+        ];
+
+        function makeVoter(i) {
+            const first = FIRST[i % FIRST.length],
+                last = LAST[(i * 3 + 1) % LAST.length];
+            const ward = randOf(WARDS);
+            const precinct = randOf(PRECINCTS[ward.id]);
+            const street = randOf(STREETS);
+            const houseNum = randInt(100, 3800);
+            const worker = randOf(WORKERS.filter(w => w.role === 'Canvasser'));
+            const regStatus = i % 9 === 0 ? randOf(['Registration Needed', 'Registration Follow-Up', 'Registration Pending']) :
+                'Registered';
+            const mailedDaysAgo = randInt(1, 26);
+            let ballotStatus;
+            const r = Math.random();
+            if (r < 0.03) ballotStatus = 'Ballot Requested';
+            else if (r < 0.06) ballotStatus = 'Application Received';
+            else if (mailedDaysAgo < 3) ballotStatus = 'Ballot Mailed';
+            else if (r < 0.45) ballotStatus = 'Outstanding';
+            else if (r < 0.55) ballotStatus = 'Voter Contacted';
+            else if (r < 0.63) ballotStatus = 'Voter Says Returned';
+            else if (r < 0.90) ballotStatus = 'Officially Returned';
+            else if (r < 0.94) ballotStatus = 'Ballot Issue';
+            else if (r < 0.97) ballotStatus = 'Curing Needed';
+            else ballotStatus = 'Completed';
+            const canvassStatus = randOf(CANVASS_STATUSES);
+            return {
+                id: i,
+                voterId: 'MI-' + (100000 + i * 7 + ward.id.charCodeAt(1)),
+                first,
+                last,
+                name: first + ' ' + last,
+                address: `${houseNum} ${street}`,
+                city: 'Flint, MI 4850' + (ward.id[1]),
+                ward: ward.name,
+                wardId: ward.id,
+                precinct,
+                street,
+                phone: `810-555-${String(1000 + i * 7).slice(-4)}`,
+                email: `${first.toLowerCase()}.${last.toLowerCase()}@example.com`,
+                registration: regStatus,
+                ballotStatus,
+                ballotMailedDate: (ballotStatus === 'Ballot Requested' || ballotStatus === 'Application Received') ? null :
+                    daysAgo(mailedDaysAgo),
+                ballotReturnedDate: (ballotStatus === 'Officially Returned' || ballotStatus === 'Completed') ? daysAgo(
+                    randInt(0, mailedDaysAgo - 1)) : null,
+                voterSaysReturnedDate: ballotStatus === 'Voter Says Returned' ? daysAgo(randInt(0, mailedDaysAgo - 1)) :
+                null,
+                canvassStatus,
+                assignedWorker: worker ? worker.name : 'Unassigned',
+                lastContact: Math.random() > 0.15 ? daysAgo(randInt(0, 20)) : null,
+                dnc: i % 23 === 0,
+                notes: i % 7 === 0 ? 'Prefers evening calls after 5pm.' : '',
+                household: Math.random() > 0.6 ? 2 : 1,
+                contacts: [],
+                registrationAssisted: i % 12 === 0 ? 'Registration Form Provided' : (i % 15 === 0 ?
+                    'Registration Assistance Provided' : null),
+                registrationFollowUp: i % 18 === 0 ? 'Follow-up scheduled' : null
+            };
+        }
+        const VOTERS = Array.from({ length: 120 }, (_, i) => makeVoter(i + 1));
+
+        // Add contact history
+        VOTERS.forEach(v => {
+            if (Math.random() > 0.3) {
+                v.contacts.push({ type: 'Call', result: randOf(CONTACT_RESULTS), date: daysAgo(randInt(1, 10)),
+                    worker: randOf(WORKERS.filter(w => w.role === 'Canvasser')).name, note: '' });
+            }
+            if (Math.random() > 0.5) {
+                v.contacts.push({ type: 'Door', result: randOf(['Literature Dropped', 'Spoke With Voter', 'No Answer',
+                        'Registration Needed'
+                    ]), date: daysAgo(randInt(1, 15)), worker: randOf(WORKERS.filter(w => w.role === 'Canvasser'))
+                        .name, note: '' });
+            }
+            if (Math.random() > 0.7) {
+                v.contacts.push({ type: 'SMS', result: 'Sent', date: daysAgo(randInt(1, 8)), worker: randOf(WORKERS
+                        .filter(w => w.role === 'Canvasser')).name, note: 'Reminder sent' });
+            }
+            v.contacts.sort((a, b) => new Date(b.date) - new Date(a.date));
+        });
+
+        let TASKS = [
+            { id: uid('T'), title: 'Call Beverly Smith tomorrow', voter: 'Beverly Smith', assigned: 'Mary Jones',
+                due: daysAgo(-1), priority: 'High', status: 'Open' },
+            { id: uid('T'), title: 'Follow up on registration for John Carter', voter: 'John Carter',
+                assigned: 'Angela Wilson', due: daysAgo(-2), priority: 'Medium', status: 'Open' },
+            { id: uid('T'), title: 'Confirm ballot cure for Sarah Williams', voter: 'Sarah Williams',
+                assigned: 'Linda Moore', due: daysAgo(0), priority: 'High', status: 'In Progress' },
+            { id: uid('T'), title: 'Re-attempt door at 1207 Clio Road', voter: 'David Jones', assigned: 'David Smith',
+                due: daysAgo(-3), priority: 'Low', status: 'Open' },
+            { id: uid('T'), title: 'Chase outstanding ballot — Mary Brown', voter: 'Mary Brown',
+                assigned: 'Susan Blake', due: daysAgo(2), priority: 'High', status: 'Overdue' },
+            { id: uid('T'), title: 'Verify address for Michael Davis', voter: 'Michael Davis',
+                assigned: 'Robert Taylor', due: daysAgo(-5), priority: 'Medium', status: 'Completed' },
+            { id: uid('T'), title: 'Send SMS reminder — Ward 3 outstanding list', voter: '—', assigned: 'Mary Jones',
+                due: daysAgo(-1), priority: 'Medium', status: 'Open' },
+            { id: uid('T'), title: 'Review 42 flagged ballot records', voter: '—', assigned: 'James Brown',
+                due: daysAgo(0), priority: 'High', status: 'In Progress' }
+        ];
+
+        let NOTIFICATIONS = [
+            { id: uid('N'), title: '50 voters assigned to you', body: 'New chase-list voters assigned in Ward 3.',
+                time: daysAgo(0), read: false },
+            { id: uid('N'), title: '12 voters from your list officially returned ballots',
+                body: 'Reconciliation import updated ballot statuses.', time: daysAgo(0), read: false },
+            { id: uid('N'), title: '148 additional ballots returned since previous import',
+                body: 'County file IMP-1829 processed successfully.', time: daysAgo(1), read: false },
+            { id: uid('N'), title: '42 ballot records require review',
+                body: 'Unmatched rows from the latest AV return file.', time: daysAgo(1), read: true },
+            { id: uid('N'), title: '312 ballots mailed more than 14 days ago remain outstanding',
+                body: 'Priority chase list updated.', time: daysAgo(2), read: false }
+        ];
+
+        const TURFS = [
+            { id: '3-17', ward: 'Ward 3', streets: ['Clio Road 1200–1800', 'Dayton Street 400–900',
+                    'Welch Boulevard 2100–2500'
+                ], assigned: ['Mary Jones', 'Susan Blake'], addresses: 183, attempted: 134, progress: 73 },
+            { id: '3-18', ward: 'Ward 3', streets: ['Court Street 100–600', 'Saginaw Street 900–1300'],
+                assigned: ['David Smith'], addresses: 142, attempted: 88, progress: 62 },
+            { id: '2-05', ward: 'Ward 2', streets: ['Carpenter Road 500–1100'], assigned: ['Susan Blake'],
+                addresses: 96, attempted: 70, progress: 73 },
+            { id: '2-06', ward: 'Ward 2', streets: ['Fenton Road 200–800'], assigned: ['Michael Davis'], addresses: 120,
+                attempted: 52, progress: 43 },
+            { id: '1-02', ward: 'Ward 1', streets: ['Detroit Street 300–900'], assigned: ['Robert Taylor'], addresses: 88,
+                attempted: 81, progress: 92 },
+            { id: '4-01', ward: 'Ward 4', streets: ['Ballenger Highway 1000–1500'], assigned: ['Thomas Miller'],
+                addresses: 110, attempted: 40, progress: 36 },
+            { id: '4-03', ward: 'Ward 4', streets: ['Miller Road 200–700'], assigned: ['Karen White'], addresses: 75,
+                attempted: 20, progress: 27 },
+            { id: '5-01', ward: 'Ward 5', streets: ['Lippincott Blvd 100–500'], assigned: ['Susan Clark'], addresses: 100,
+                attempted: 37, progress: 37 }
+        ];
+
+        const IMPORTS = [
+            { id: 'IMP-1829', filename: 'MI_AV_Return_File_1019.csv', type: 'AV Return File', records: 892,
+                status: 'Completed', date: daysAgo(0), matched: 841, errors: 20 },
+            { id: 'IMP-1828', filename: 'Genesee_County_Voter_Export.xlsx', type: 'Voter Export', records: 4200,
+                status: 'Completed', date: daysAgo(3), matched: 4200, errors: 0 },
+            { id: 'IMP-1827', filename: 'Campaign_CRM_Export_Oct.csv', type: 'CRM Export', records: 2540,
+                status: 'Completed', date: daysAgo(5), matched: 2412, errors: 128 },
+            { id: 'IMP-1826', filename: 'AV_Applications_Batch3.csv', type: 'AV Return File', records: 610,
+                status: 'Completed', date: daysAgo(8), matched: 598, errors: 12 }
+        ];
+
+        let AUDIT_LOG = [
+            { id: 'A1', date: daysAgo(0), time: '3:42 PM', user: 'John Smith', action: 'Ballot Returned',
+                detail: 'Beverly Smith: Outstanding → Officially Returned (Entered by: John Smith)' },
+            { id: 'A2', date: daysAgo(0), time: '2:15 PM', user: 'Admin John', action: 'Reconciliation',
+                detail: 'IMP-1829 — 892 records, 841 matched, 31 already returned, 20 errors' },
+            { id: 'A3', date: daysAgo(0), time: '11:08 AM', user: 'Mary Jones', action: 'Canvass Update',
+                detail: 'John Carter — Literature Dropped (Door contact)' },
+            { id: 'A4', date: daysAgo(1), time: '5:51 PM', user: 'Linda Moore', action: 'Turf Assignment',
+                detail: 'Turf 3-18 assigned to David Smith (142 addresses)' },
+            { id: 'A5', date: daysAgo(1), time: '4:20 PM', user: 'James Brown', action: 'DNC Added',
+                detail: 'Karen White added to Do Not Contact list' }
+        ];
+
+        // ============================================================
+        // SIDEBAR & HEADER
+        // ============================================================
+        function renderSidebar() {
+            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            const isWardCaptain = currentUser && currentUser.role === 'Ward Captain';
+            const isCanvasser = currentUser && currentUser.role === 'Canvasser';
+
+            let nav = [
+                { label: 'Dashboard', key: 'dashboard', icon: 'dashboard' },
+                { label: 'Voters', key: 'voters', icon: 'voters' },
+                { label: 'Ballot Tracker', key: 'ballot', icon: 'ballot' },
+                { label: 'Field Map', key: 'map', icon: 'map' },
+                { label: 'Turfs', key: 'turfs', icon: 'turf' },
+                { label: 'Assignments', key: 'assignments', icon: 'assign' },
+            ];
+
+            // Show limited nav for canvassers
+            if (!isCanvasser) {
+                nav.push({ label: 'Team', key: 'team', icon: 'team' });
+            }
+            nav.push({ label: 'Tasks', key: 'tasks', icon: 'tasks', badge: TASKS.filter(t => t.status !== 'Completed')
+                    .length });
+
+            if (isAdmin) {
+                nav.push({ label: 'Imports', key: 'imports', icon: 'imports' });
+                nav.push({ label: 'Chase List', key: 'chase', icon: 'reports', badge: VOTERS.filter(v => (v.ballotStatus ===
+                        'Outstanding' || v.ballotStatus === 'Ballot Mailed') && v.dnc === false).length });
+                nav.push({ label: 'Field Ops', key: 'fieldops', icon: 'field' });
+                nav.push({ label: 'Settings', key: 'settings', icon: 'settings' });
+            }
+
+            if (isWardCaptain) {
+                nav.push({ label: 'Chase List', key: 'chase', icon: 'reports', badge: VOTERS.filter(v => (v.ballotStatus ===
+                        'Outstanding' || v.ballotStatus === 'Ballot Mailed') && v.ward === currentUser.ward && v.dnc ===
+                        false).length });
+                nav.push({ label: 'Field Ops', key: 'fieldops', icon: 'field' });
+            }
+
+            if (isCanvasser) {
+                nav.push({ label: 'My Assignments', key: 'myassignments', icon: 'assign' });
+            }
+
+            let html = `<div class="sb-brand"><div class="sb-brand-mark">RV</div><div class="sb-brand-text">ReturnVote<small>Campaign Operations</small></div></div>
+                <nav class="sb-nav"><div class="sb-section-label">Menu</div>`;
+            nav.forEach(item => {
+                const active = window.currentPage === item.key ? 'active' : '';
+                const badge = item.badge ? `<span class="sb-badge">${item.badge}</span>` : '';
+                html += `<div class="sb-item ${active}" data-page="${item.key}">${ic(item.icon)}<span class="sb-label">${item.label}</span>${badge}</div>`;
+            });
+            html += `</nav>
+                <div class="sb-footer">
+                    <div class="sb-user" onclick="logout()" style="cursor:pointer;">
+                        <div class="sb-avatar" style="background:${currentUser ? currentUser.avatarColor || '#5b8dff' : '#5b8dff'}">${currentUser ? initials(currentUser.name) : 'U'}</div>
+                        <div class="sb-user-meta">
+                            <div class="sb-user-name">${currentUser ? currentUser.name : 'User'}</div>
+                            <div class="sb-user-role">${currentUser ? currentUser.role : 'Unknown'}</div>
+                        </div>
+                    </div>
+                    <button class="sb-collapse-btn" onclick="toggleSidebar()">${ic('chevLeft')} Collapse</button>
+                    <button class="sb-collapse-btn" style="margin-top:4px;background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.05);" onclick="logout()">${ic('logout')} Sign Out</button>
+                </div>`;
+            document.getElementById('sidebar').innerHTML = html;
+            document.querySelectorAll('.sb-item[data-page]').forEach(el => {
+                el.addEventListener('click', () => { window.currentPage = el.dataset.page;
+                    renderPage();
+                    closeMobileSidebar(); });
+            });
+        }
+
+        function renderHeader() {
+            const unread = NOTIFICATIONS.filter(n => !n.read).length;
+            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            document.getElementById('header').innerHTML = `
+                <button class="hdr-burger" onclick="toggleMobileSidebar()">${ic('menu')}</button>
+                <button class="hdr-desktop-toggle" onclick="toggleSidebar()">${ic('menu')}</button>
+                <div class="hdr-select"><span class="hdr-select-label">Campaign</span><span class="hdr-select-value">Flint GOTV 2026</span></div>
+                <div class="hdr-search">${ic('search')}<input type="text" placeholder="Search voters, tasks, streets..." id="globalSearch" onkeyup="if(event.key==='Enter'){globalSearch(this.value)}"></div>
+                <div class="hdr-right">
+                    <button class="icon-btn" onclick="showNotifications()">${ic('bell')}${unread?`<span class="dot-badge">${unread}</span>`:''}</button>
+                    ${isAdmin ? `<button class="btn btn-primary btn-sm" onclick="showQuickAddVoter()">${ic('plus')} Add Voter</button>` : ''}
+                    <div class="hdr-avatar" style="background:${currentUser ? currentUser.avatarColor || '#5b8dff' : '#5b8dff'}">${currentUser ? initials(currentUser.name) : 'U'}</div>
+                </div>
+            `;
+        }
+
+        function closeMobileSidebar() { document.getElementById('sidebar').classList.remove('mobile-open');
+            document.getElementById('mobileOverlay').classList.remove('show'); }
+
+        function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open');
+            document.getElementById('mobileOverlay').classList.toggle('show'); }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('main-col').classList.toggle('collapsed'); }
+        window.currentPage = 'dashboard';
+        window.toggleSidebar = toggleSidebar;
+        window.closeMobileSidebar = closeMobileSidebar;
+        window.toggleMobileSidebar = toggleMobileSidebar;
+
+        function globalSearch(query) {
+            if (!query || query.length < 2) { toast('Please enter at least 2 characters'); return; }
+            const streetMatch = STREETS.find(s => s.toLowerCase().includes(query.toLowerCase()));
+            if (streetMatch) {
+                const results = VOTERS.filter(v => v.street === streetMatch);
+                toast(`📍 ${streetMatch}: ${results.length} voters found`);
+                window.currentPage = 'fieldops';
+                renderPage();
+                setTimeout(() => {
+                    const rows = document.querySelectorAll('#streetTable tbody tr');
+                    rows.forEach((row, i) => { if (i < results.length) row.style.background = 'var(--blue-50)'; });
+                }, 100);
+                return;
+            }
+            const results = VOTERS.filter(v => v.name.toLowerCase().includes(query.toLowerCase()) || v.address.toLowerCase()
+                .includes(query.toLowerCase()) || v.phone.includes(query) || v.voterId.toLowerCase().includes(query
+                    .toLowerCase()));
+            if (results.length === 0) { toast('No voters found matching "' + query + '"'); return; }
+            toast(`Found ${results.length} voters matching "${query}"`);
+            window.currentPage = 'voters';
+            renderPage();
+            setTimeout(() => {
+                const rows = document.querySelectorAll('#voterTable tbody tr');
+                rows.forEach((row, i) => { if (i < results.length) row.style.background = 'var(--blue-50)'; });
+            }, 100);
+        }
+
+        function showNotifications() {
+            const html = NOTIFICATIONS.map(n => `
+                    <div style="padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;gap:10px;${n.read?'':'background:var(--blue-50)'}">
+                        ${!n.read?'<span style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);margin-top:5px;flex-shrink:0"></span>':''}
+                        <div><div style="font-weight:600">${n.title}</div><div style="font-size:12px;color:var(--gray-500)">${n.body}</div><div style="font-size:10px;color:var(--gray-400);margin-top:4px">${fmtDate(n.time)}</div></div>
+                    </div>
+                `).join('');
+            toast('📬 Notifications\n' + html, 'default');
+        }
+
+        function showQuickAddVoter() { toast('📝 Quick Add Voter form would open here'); }
+
+        // ============================================================
+        // PAGE RENDERERS
+        // ============================================================
+        function renderPage() {
+            const map = {
+                dashboard: renderDashboard,
+                voters: renderVoters,
+                ballot: renderBallot,
+                map: renderMap,
+                turfs: renderTurfs,
+                assignments: renderAssignments,
+                team: renderTeam,
+                tasks: renderTasks,
+                imports: renderImports,
+                chase: renderChase,
+                fieldops: renderFieldOps,
+                settings: renderSettings,
+                myassignments: renderMyAssignments
+            };
+            const content = document.getElementById('content');
+            content.innerHTML = (map[window.currentPage] || renderDashboard)();
+            document.querySelectorAll('.sb-item[data-page]').forEach(el => {
+                el.classList.toggle('active', el.dataset.page === window.currentPage);
+            });
+            resetSessionTimeout();
+        }
+
+        // ===== MY ASSIGNMENTS (Canvasser view) =====
+        function renderMyAssignments() {
+            if (!currentUser || currentUser.role !== 'Canvasser') {
+                toast('Access restricted to canvassers', 'error');
+                window.currentPage = 'dashboard';
+                renderPage();
+                return '';
+            }
+            const myVoters = VOTERS.filter(v => v.assignedWorker === currentUser.name);
+            const total = myVoters.length;
+            const contacted = myVoters.filter(v => v.canvassStatus !== 'Not Visited').length;
+            const noAnswer = myVoters.filter(v => v.canvassStatus === 'No Answer').length;
+            const returned = myVoters.filter(v => v.ballotStatus === 'Officially Returned' || v.ballotStatus === 'Completed')
+                .length;
+            const remaining = total - contacted;
+            const outstanding = myVoters.filter(v => v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed')
+                .length;
+
+            return `
+                    <div class="page-head"><div><div class="page-title">My Assignments</div><div class="page-sub">${total} voters assigned · ${remaining} remaining</div></div></div>
+                    <div class="grid grid-4">
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Assigned</span></div><div class="kpi-value" style="font-size:20px">${total}</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Contacted</span></div><div class="kpi-value" style="font-size:20px">${contacted}</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">No Answer</span></div><div class="kpi-value" style="font-size:20px">${noAnswer}</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Returned</span></div><div class="kpi-value" style="font-size:20px">${returned}</div></div>
+                    </div>
+                    <div class="card"><div class="card-head"><span class="card-title">My Voters</span><span class="badge badge-blue">${total}</span></div><div class="table-wrap"><table><thead><tr><th>Voter</th><th>Status</th><th>Ballot</th><th>Last Contact</th><th>Action</th></tr></thead><tbody>
+                        ${myVoters.slice(0,20).map(v=>`
+                            <tr>
+                                <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
+                                <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
+                                <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':'gray'}">${v.ballotStatus}</span></td>
+                                <td class="small muted">${v.lastContact?fmtDate(v.lastContact):'Never'}</td>
+                                <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+                                    <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'Call')">${ic('phone')}</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'Door')">${ic('door')}</button>
+                                    <button class="btn btn-sm btn-success" onclick="markReturned(${v.id})">${ic('check')}</button>
+                                </div></td>
+                            </tr>
+                        `).join('')}
+                        ${myVoters.length>20?`<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--gray-500)">+${myVoters.length-20} more</td></tr>`:''}
+                    </tbody></table></div></div>
+                `;
+        }
+
+        // ===== DASHBOARD =====
+        function renderDashboard() {
+            const total = VOTERS.length;
+            const returned = VOTERS.filter(v => v.ballotStatus === 'Officially Returned' || v.ballotStatus === 'Completed')
+                .length;
+            const outstanding = VOTERS.filter(v => v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed')
+                .length;
+            const tasksOpen = TASKS.filter(t => t.status !== 'Completed').length;
+            const contacted = VOTERS.filter(v => v.canvassStatus !== 'Not Visited').length;
+            const vsReturned = VOTERS.filter(v => v.ballotStatus === 'Voter Says Returned').length;
+            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            return `
+                    <div class="page-head"><div><div class="page-title">Dashboard</div><div class="page-sub">Campaign operations overview · Flint GOTV 2026</div></div><div class="page-actions">${isAdmin?`<button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('check')} Run Reconciliation</button>`:''}<button class="btn btn-secondary btn-sm" onclick="toast('Refreshing data')">${ic('clock')} Refresh</button></div></div>
+                    <div class="grid grid-4">
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters</span><span class="kpi-icon" style="background:#e7edfd;color:#2454e0">${ic('voters')}</span></div><div class="kpi-value">${fmt(total)}</div><div class="kpi-delta up">+12 this week</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Officially Returned</span><span class="kpi-icon" style="background:#e3f7ec;color:#0a8f5b">${ic('check')}</span></div><div class="kpi-value">${fmt(returned)}</div><div class="kpi-delta up">${Math.round(returned/total*100)}%</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voter Says Returned</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('note')}</span></div><div class="kpi-value">${fmt(vsReturned)}</div><div class="kpi-delta flat">${Math.round(vsReturned/total*100)}%</div></div>
+                        <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Outstanding</span><span class="kpi-icon" style="background:#fdf1de;color:#b4740e">${ic('clock')}</span></div><div class="kpi-value">${fmt(outstanding)}</div><div class="kpi-delta down">${Math.round(outstanding/total*100)}%</div></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-top:14px">
+                        <div class="card"><div class="card-head"><span class="card-title">Recent Activity</span></div><div class="card-pad">
+                            ${AUDIT_LOG.slice(0,6).map(a=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)"><span><strong>${a.user}</strong> ${a.action}</span><span class="muted small">${fmtDate(a.date)} ${a.time||''}</span></div>`).join('')}
+                        </div></div>
+                        <div class="card"><div class="card-head"><span class="card-title">Open Tasks</span><span class="badge badge-amber">${tasksOpen}</span></div><div class="card-pad">
+                            ${TASKS.filter(t=>t.status!=='Completed').slice(0,5).map(t=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)"><span>${esc(t.title)}</span><span class="badge badge-${t.status==='Overdue'?'red':t.status==='In Progress'?'amber':'blue'}">${t.status}</span></div>`).join('')}
+                            ${TASKS.filter(t=>t.status!=='Completed').length>5?`<div class="muted small" style="text-align:center;padding-top:6px">+${TASKS.filter(t=>t.status!=='Completed').length-5} more</div>`:''}
+                        </div></div>
+                    </div>
+                `;
+        }
+
+        // ===== VOTERS =====
+        function renderVoters() {
+            let rows = VOTERS.slice(0, 25).map(v => `
+                        <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
+                            <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
+                            <td>${v.ward}</td>
+                            <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
+                            <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
+                            <td>${v.assignedWorker}</td>
+                            <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
+                            <td>${v.dnc?'🚫':''}</td>
+                        </tr>
+                    `).join('');
+            return `
+                        <div class="page-head"><div><div class="page-title">Voters</div><div class="page-sub">${fmt(VOTERS.length)} total voters</div></div><div class="page-actions"><button class="btn btn-secondary btn-sm" onclick="toast('Export CSV')">${ic('download')} Export</button></div></div>
+                        <div class="card"><div class="table-toolbar"><div class="filter-bar">
+                            <select id="filterWard" onchange="filterVoters()"><option value="">All Wards</option>${WARDS.map(w=>`<option value="${w.name}">${w.name}</option>`).join('')}</select>
+                            <select id="filterStatus" onchange="filterVoters()"><option value="">All Status</option>${BALLOT_STATUSES.slice(0,7).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+                            <select id="filterCanvass" onchange="filterVoters()"><option value="">All Canvass</option>${CANVASS_STATUSES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+                            <select id="filterReg" onchange="filterVoters()"><option value="">All Registration</option><option value="Registered">Registered</option><option value="Registration Needed">Registration Needed</option><option value="Registration Follow-Up">Follow-Up</option></select>
+                            <input type="text" placeholder="Search..." id="voterSearch" onkeyup="filterVoters()">
+                        </div></div>
+                        <div class="table-wrap"><table id="voterTable"><thead><tr><th>Voter</th><th>Ward</th><th>Ballot Status</th><th>Registration</th><th>Worker</th><th>Canvass</th><th>DNC</th></tr></thead><tbody id="voterTableBody">${rows}</tbody></table></div></div>
+                    `;
+        }
+
+        window.filterVoters = function() {
+            const ward = document.getElementById('filterWard')?.value || '';
+            const status = document.getElementById('filterStatus')?.value || '';
+            const canvass = document.getElementById('filterCanvass')?.value || '';
+            const reg = document.getElementById('filterReg')?.value || '';
+            const search = document.getElementById('voterSearch')?.value?.toLowerCase() || '';
+            let filtered = VOTERS;
+            if (ward) filtered = filtered.filter(v => v.ward === ward);
+            if (status) filtered = filtered.filter(v => v.ballotStatus === status);
+            if (canvass) filtered = filtered.filter(v => v.canvassStatus === canvass);
+            if (reg) filtered = filtered.filter(v => v.registration === reg);
+            if (search) filtered = filtered.filter(v => v.name.toLowerCase().includes(search) || v.address.toLowerCase()
+                .includes(search) || v.phone.includes(search) || v.voterId.toLowerCase().includes(search));
+            const tbody = document.getElementById('voterTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = filtered.slice(0, 25).map(v => `
+                        <tr onclick="showVoterDetail(${v.id})" style="cursor:pointer">
+                            <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
+                            <td>${v.ward}</td>
+                            <td><span class="badge badge-${v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed'?'green':v.ballotStatus==='Outstanding'||v.ballotStatus==='Ballot Mailed'?'amber':v.ballotStatus==='Voter Says Returned'?'purple':'gray'}">${v.ballotStatus}</span></td>
+                            <td><span class="badge badge-${v.registration==='Registered'?'green':v.registration.includes('Assisted')?'amber':'red'}">${v.registration}</span></td>
+                            <td>${v.assignedWorker}</td>
+                            <td><span class="badge badge-${v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter'?'green':v.canvassStatus==='Not Visited'?'gray':'amber'}">${v.canvassStatus}</span></td>
+                            <td>${v.dnc?'🚫':''}</td>
+                        </tr>
+                    `).join('');
+            if (filtered.length === 0) tbody.innerHTML =
+                '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-500)">No voters match your filters</td></tr>';
+        };
+
+        window.showVoterDetail = function(id) {
+            const v = VOTERS.find(v => v.id === id);
+            if (!v) return;
+            const contacts = v.contacts || [];
+            const contactHtml = contacts.slice(0, 8).map(c => `
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--gray-50);font-size:13px">
+                            <span><span class="badge badge-${c.type==='Call'?'blue':c.type==='Door'?'amber':'green'}">${c.type}</span> ${c.result}</span>
+                            <span class="muted small">${fmtDate(c.date)} · ${c.worker}</span>
+                        </div>
+                    `).join('');
+            const regAssist = v.registrationAssisted ? `📋 Registration Assistance: ${v.registrationAssisted}\n` : '';
+            const regFollow = v.registrationFollowUp ? `📋 Registration Follow-Up: ${v.registrationFollowUp}\n` : '';
+            toast(`📋 ${v.name}\n📍 ${v.address}\n📞 ${v.phone}\n🗳️ ${v.ballotStatus}\n📬 Voter Says Returned: ${v.voterSaysReturnedDate?fmtDate(v.voterSaysReturnedDate):'No'}\n📬 Officially Returned: ${v.ballotReturnedDate?fmtDate(v.ballotReturnedDate):'No'}\n👤 ${v.assignedWorker}\n${regAssist}${regFollow}${v.dnc?'🚫 Do Not Contact\n':''}${v.notes? '📝 '+v.notes:''}\n${contacts.length>0?'\n📞 Recent Contacts:\n'+contactHtml:''}`);
+        };
+
+        // ===== BALLOT =====
+        function renderBallot() {
+            const returned = VOTERS.filter(v => v.ballotStatus === 'Officially Returned' || v.ballotStatus === 'Completed')
+                .length;
+            const outstanding = VOTERS.filter(v => v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed')
+                .length;
+            const vsReturned = VOTERS.filter(v => v.ballotStatus === 'Voter Says Returned').length;
+            const tenDayOut = VOTERS.filter(v => (v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed') &&
+                v.ballotMailedDate && daysAgo(10) > new Date(v.ballotMailedDate));
+            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            return `
+                        <div class="page-head"><div><div class="page-title">Ballot Tracker</div><div class="page-sub">${fmt(returned)} official returns · ${fmt(vsReturned)} voter-says-returned · ${fmt(outstanding)} outstanding</div></div><div class="page-actions">${isAdmin?`<button class="btn btn-success btn-sm" onclick="runReconciliation()">${ic('upload')} Reconcile Returns</button>`:''}</div></div>
+                        <div class="grid grid-2">
+                            <div class="card"><div class="card-head"><span class="card-title">Returned by Ward</span></div><div class="card-pad">
+                                ${WARDS.map(w=>{const cnt=VOTERS.filter(v=>v.wardId===w.id && (v.ballotStatus==='Officially Returned'||v.ballotStatus==='Completed')).length;const totalW=VOTERS.filter(v=>v.wardId===w.id).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${w.name}</span><span>${cnt} / ${totalW} (${Math.round(cnt/totalW*100||0)}%)</span></div>`}).join('')}
+                            </div></div>
+                            <div class="card"><div class="card-head"><span class="card-title">Ballot Status Distribution</span></div><div class="card-pad">
+                                ${BALLOT_STATUSES.slice(0,8).map(s=>{const cnt=VOTERS.filter(v=>v.ballotStatus===s).length;return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`}).join('')}
+                            </div></div>
+                        </div>
+                        <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">🚨 Priority: Ballots Mailed >10 Days — Not Returned</span><span class="badge badge-red">${tenDayOut.length}</span></div><div class="card-pad">
+                            ${tenDayOut.slice(0,10).map(v=>`
+                                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-100)">
+                                    <span>${esc(v.name)} — ${v.ward}</span>
+                                    <span class="muted small">Mailed ${fmtDate(v.ballotMailedDate)} (${Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24))} days)</span>
+                                </div>
+                            `).join('')}
+                            ${tenDayOut.length>10?`<div class="muted small" style="text-align:center;padding-top:6px">+${tenDayOut.length-10} more</div>`:''}
+                        </div></div>
+                    `;
+        }
+
+        // ===== RECONCILIATION =====
+        window.runReconciliation = function() {
+            if (!currentUser || currentUser.role !== 'Campaign Admin') {
+                toast('Admin access required', 'error');
+                return;
+            }
+            const processed = 892;
+            let matched = 0;
+            let alreadyReturned = 0;
+            let errors = 0;
+            VOTERS.forEach(v => {
+                if (v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed' || v.ballotStatus ===
+                    'Voter Says Returned') {
+                    if (Math.random() > 0.15) {
+                        const oldStatus = v.ballotStatus;
+                        v.ballotStatus = 'Officially Returned';
+                        v.ballotReturnedDate = new Date();
+                        matched++;
+                        AUDIT_LOG.unshift({ id: uid('A'), date: new Date(), time: fmtTime(new Date()),
+                            user: currentUser.name, action: 'Ballot Returned',
+                            detail: `${v.name}: ${oldStatus} → Officially Returned (Reconciliation)` });
+                    } else {
+                        errors++;
+                    }
+                } else if (v.ballotStatus === 'Officially Returned' || v.ballotStatus === 'Completed') {
+                    alreadyReturned++;
+                }
+            });
+            const msg =
+                `📊 Reconciliation Complete\n${processed} records processed\n${matched} voters matched → changed to Returned\n${alreadyReturned} already marked Returned\n${errors} records could not be matched`;
+            toast(msg, 'success');
+            renderPage();
+        };
+
+        // ===== MAP =====
+        function renderMap() {
+            return `
+                        <div class="page-head"><div><div class="page-title">Field Map</div><div class="page-sub">Ward 3 · Precinct 4 · ${VOTERS.filter(v=>v.wardId==='W3').length} voters</div></div></div>
+                        <div class="card" style="height:500px;display:flex;align-items:center;justify-content:center;background:#e7ecf5;border-radius:var(--radius-lg);border:1px solid var(--gray-200);flex-direction:column;gap:16px">
+                            <div style="font-size:40px;color:#6b7280">🗺️</div>
+                            <div style="font-weight:600;color:#374151">Interactive Map View — ${WORKERS.filter(w=>w.role==='Canvasser').length} canvassers active</div>
+                            <div class="flex gap-8"><span class="badge badge-green">● ${VOTERS.filter(v=>v.canvassStatus==='Completed'||v.canvassStatus==='Spoke With Voter').length} Completed</span><span class="badge badge-amber">● ${VOTERS.filter(v=>v.canvassStatus==='Not Visited').length} Pending</span><span class="badge badge-red">● ${VOTERS.filter(v=>v.dnc).length} DNC</span></div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+                                ${STREETS.slice(0,8).map(s=>{
+                                    const cnt = VOTERS.filter(v=>v.street===s).length;
+                                    const done = VOTERS.filter(v=>v.street===s && v.canvassStatus!=='Not Visited').length;
+                                    return `<span class="badge badge-${done===cnt?'green':done>0?'amber':'gray'}">${s.split(' ')[0]} ${done}/${cnt}</span>`;
+                                }).join('')}
+                            </div>
+                            <button class="btn btn-secondary" onclick="toast('Opening interactive map with street-level data')">Open Interactive Map</button>
+                        </div>
+                        <div class="grid grid-2" style="margin-top:14px">
+                            <div class="card"><div class="card-head"><span class="card-title">Street Coverage</span></div><div class="card-pad">
+                                ${STREETS.slice(0,8).map(s=>{
+                                    const cnt = VOTERS.filter(v=>v.street===s).length;
+                                    const done = VOTERS.filter(v=>v.street===s && v.canvassStatus!=='Not Visited').length;
+                                    const pct = cnt?Math.round(done/cnt*100):0;
+                                    return `<div class="street-progress"><span class="street-name">${s}</span><div class="progress"><div style="width:${pct}%"></div></div><span class="small">${done}/${cnt}</span></div>`;
+                                }).join('')}
+                            </div></div>
+                            <div class="card"><div class="card-head"><span class="card-title">Canvass Results</span></div><div class="card-pad">
+                                ${CANVASS_STATUSES.slice(0,8).map(s=>{
+                                    const cnt = VOTERS.filter(v=>v.canvassStatus===s).length;
+                                    return `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${s}</span><span>${cnt}</span></div>`;
+                                }).join('')}
+                            </div></div>
+                        </div>
+                    `;
+        }
+
+        // ===== TURFS =====
+        function renderTurfs() {
+            return `
+                        <div class="page-head"><div><div class="page-title">Turfs</div><div class="page-sub">${TURFS.length} turf areas · ${TURFS.reduce((a,t)=>a+t.addresses,0)} addresses</div></div></div>
+                        <div class="grid grid-2">
+                            ${TURFS.map(t=>`
+                                <div class="card card-pad">
+                                    <div style="display:flex;justify-content:space-between"><strong>${t.id}</strong><span class="badge badge-blue">${t.ward}</span></div>
+                                    <div class="small muted">${t.streets.join(', ')}</div>
+                                    <div class="small">Assigned: ${t.assigned.join(', ')}</div>
+                                    <div style="margin-top:8px"><div class="progress"><div style="width:${t.progress}%"></div></div></div>
+                                    <div class="flex-between small" style="margin-top:4px"><span>${t.attempted}/${t.addresses}</span><span>${t.progress}%</span></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+        }
+
+        // ===== ASSIGNMENTS =====
+        function renderAssignments() {
+            return `<div class="page-head"><div><div class="page-title">Assignments</div><div class="page-sub">Manage worker turf assignments</div></div></div>
+                        <div class="card"><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Turf</th><th>Ward</th><th>Addresses</th><th>Progress</th><th>Status</th></tr></thead><tbody>
+                            ${WORKERS.filter(w=>w.role==='Canvasser').map(w=>{
+                                const turf = TURFS.find(t=>t.assigned.includes(w.name));
+                                return `<tr><td><strong>${w.name}</strong></td><td>${turf?turf.id:'—'}</td><td>${w.ward}</td><td>${turf?turf.addresses:'—'}</td><td>${turf?turf.progress+'%':'—'}</td><td><span class="badge badge-${w.status==='Active'?'green':'gray'}">${w.status}</span></td></tr>`;
+                            }).join('')}
+                        </tbody></table></div></div>`;
+        }
+
+        // ===== TEAM =====
+        function renderTeam() {
+            return `<div class="page-head"><div><div class="page-title">Team</div><div class="page-sub">${WORKERS.length} members · ${WORKERS.filter(w=>w.status==='Active').length} active</div></div></div>
+                        <div class="grid grid-3">${WORKERS.map(w=>`
+                            <div class="card card-pad"><div style="display:flex;align-items:center;gap:10px"><div class="sb-avatar" style="background:${w.avatarColor||'#5b8dff'}">${initials(w.name)}</div><div><strong>${w.name}</strong><div class="muted small">${w.role} · ${w.status}</div><div class="muted small">${w.ward!=='—'?w.ward:''} ${w.precinct!=='—'?w.precinct:''}</div></div></div></div>
+                        `).join('')}</div>`;
+        }
+
+        // ===== TASKS =====
+        function renderTasks() {
+            return `<div class="page-head"><div><div class="page-title">Tasks</div><div class="page-sub">${TASKS.filter(t=>t.status!=='Completed').length} open · ${TASKS.filter(t=>t.status==='Overdue').length} overdue</div></div></div>
+                        <div class="card"><div class="table-wrap"><table><thead><tr><th>Task</th><th>Voter</th><th>Assigned</th><th>Due</th><th>Status</th></tr></thead><tbody>
+                            ${TASKS.map(t=>`<tr><td>${esc(t.title)}</td><td>${t.voter}</td><td>${t.assigned}</td><td>${fmtDate(t.due)}</td><td><span class="badge badge-${t.status==='Overdue'?'red':t.status==='In Progress'?'amber':t.status==='Completed'?'green':'gray'}">${t.status}</span></td></tr>`).join('')}
+                        </tbody></table></div></div>`;
+        }
+
+        // ===== IMPORTS =====
+        function renderImports() {
+            return `<div class="page-head"><div><div class="page-title">Imports & Reconciliation</div><div class="page-sub">Data import history with matching reports</div></div></div>
+                        <div class="card"><div class="table-wrap"><table><thead><tr><th>File</th><th>Type</th><th>Records</th><th>Matched</th><th>Errors</th><th>Status</th><th>Date</th></tr></thead><tbody>
+                            ${IMPORTS.map(i=>`<tr><td>${i.filename}</td><td>${i.type}</td><td>${i.records}</td><td>${i.matched||i.records}</td><td>${i.errors||0}</td><td><span class="badge badge-green">${i.status}</span></td><td>${fmtDate(i.date)}</td></tr>`).join('')}
+                        </tbody></table></div></div>
+                        <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Column Mapping Example</span></div><div class="card-pad">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                                <div class="small muted">Spreadsheet Column → System Field</div>
+                                <div class="small muted">Example</div>
+                                <div><span class="badge badge-blue">Cell Number</span> → Phone</div><div>810-555-1212</div>
+                                <div><span class="badge badge-blue">AV Sent</span> → Ballot Mailed Date</div><div>10/01/2026</div>
+                                <div><span class="badge badge-blue">AV Received</span> → Ballot Returned Date</div><div>10/15/2026</div>
+                                <div><span class="badge badge-blue">Voter ID</span> → Voter ID</div><div>100234</div>
+                            </div>
+                        </div></div>`;
+        }
+
+        // ===== CHASE LIST =====
+        function renderChase() {
+            const isAdmin = currentUser && currentUser.role === 'Campaign Admin';
+            const isWardCaptain = currentUser && currentUser.role === 'Ward Captain';
+
+            let chaseVoters = VOTERS.filter(v => (v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed') &&
+                v.dnc === false);
+
+            // Filter by ward for ward captains
+            if (isWardCaptain && currentUser.ward !== '—') {
+                chaseVoters = chaseVoters.filter(v => v.ward === currentUser.ward);
+            }
+
+            const byWard = WARDS.map(w => {
+                const cnt = chaseVoters.filter(v => v.wardId === w.id).length;
+                return {...w, count: cnt };
+            });
+            const totalChase = chaseVoters.length;
+            const tenDayOut = chaseVoters.filter(v => v.ballotMailedDate && daysAgo(10) > new Date(v.ballotMailedDate))
+                .length;
+
+            return `
+                        <div class="page-head"><div><div class="page-title">Chase List</div><div class="page-sub">${totalChase} outstanding ballots needing follow-up · ${tenDayOut} >10 days outstanding</div></div></div>
+                        <div class="grid grid-4" style="margin-bottom:14px">
+                            ${byWard.map(w=>`
+                                <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">${w.name}</span></div><div class="kpi-value" style="font-size:20px">${w.count}</div></div>
+                            `).join('')}
+                        </div>
+                        <div class="card"><div class="card-head"><span class="card-title">Outstanding Ballots (Priority Order)</span><span class="badge badge-red">${totalChase}</span></div><div class="table-wrap"><table><thead><tr><th>Voter</th><th>Ward</th><th>Mailed</th><th>Days Out</th><th>Worker</th><th>Action</th></tr></thead><tbody>
+                            ${chaseVoters.sort((a,b)=>new Date(a.ballotMailedDate)-new Date(b.ballotMailedDate)).slice(0,20).map(v=>{
+                                const days = v.ballotMailedDate?Math.round((new Date()-new Date(v.ballotMailedDate))/(1000*60*60*24)):'—';
+                                return `<tr>
+                                    <td><div class="cell-primary">${esc(v.name)}</div><div class="cell-sub">${esc(v.address)}</div></td>
+                                    <td>${v.ward}</td>
+                                    <td>${v.ballotMailedDate?fmtDate(v.ballotMailedDate):'—'}</td>
+                                    <td><span class="badge badge-${days>14?'red':days>7?'amber':'gray'}">${days} days</span></td>
+                                    <td>${v.assignedWorker}</td>
+                                    <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+                                        <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'Call')">${ic('phone')}</button>
+                                        <button class="btn btn-sm btn-secondary" onclick="recordContact(${v.id},'SMS')">${ic('sms')}</button>
+                                        <button class="btn btn-sm btn-success" onclick="markReturned(${v.id})">${ic('check')}</button>
+                                    </div></td>
+                                </tr>`;
+                            }).join('')}
+                            ${chaseVoters.length>20?`<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--gray-500)">+${chaseVoters.length-20} more outstanding ballots</td></tr>`:''}
+                        </tbody></table></div></div>
+                    `;
+        }
+
+        window.recordContact = function(id, type) {
+            const v = VOTERS.find(v => v.id === id);
+            if (!v) return;
+            const result = prompt(
+                `Record ${type} contact for ${v.name}:\nChoose result: Called-Answered, Called-No Answer, Text Sent, Wrong Number, Disconnected, Voter Says Ballot Returned, Voter Needs Assistance, Voter Will Return Ballot, Do Not Contact`
+                );
+            if (!result) return;
+            const workerName = currentUser ? currentUser.name : 'Unknown';
+            v.contacts.push({ type: type, result: result, date: new Date(), worker: workerName, note: '' });
+            if (result === 'Voter Says Ballot Returned') {
+                v.ballotStatus = 'Voter Says Returned';
+                v.voterSaysReturnedDate = new Date();
+            }
+            if (result === 'Do Not Contact') {
+                v.dnc = true;
+            }
+            toast(`✅ ${type} contact recorded for ${v.name}: ${result}`, 'success');
+            AUDIT_LOG.unshift({ id: uid('A'), date: new Date(), time: fmtTime(new Date()), user: workerName,
+                action: 'Contact Recorded', detail: `${v.name}: ${type} → ${result}` });
+            renderPage();
+        };
+
+        window.markReturned = function(id) {
+            const v = VOTERS.find(v => v.id === id);
+            if (!v) return;
+            const oldStatus = v.ballotStatus;
+            v.ballotStatus = 'Officially Returned';
+            v.ballotReturnedDate = new Date();
+            const workerName = currentUser ? currentUser.name : 'Unknown';
+            toast(`✅ ${v.name} marked as Officially Returned`, 'success');
+            AUDIT_LOG.unshift({ id: uid('A'), date: new Date(), time: fmtTime(new Date()), user: workerName,
+                action: 'Ballot Returned',
+                detail: `${v.name}: ${oldStatus} → Officially Returned (Entered by: ${workerName})` });
+            renderPage();
+        };
+
+        // ===== FIELD OPS =====
+        function renderFieldOps() {
+            const total = VOTERS.length;
+            const doorsAttempted = VOTERS.filter(v => v.canvassStatus !== 'Not Visited').length;
+            const contacted = VOTERS.filter(v => v.canvassStatus === 'Spoke With Voter' || v.canvassStatus === 'Completed')
+                .length;
+            const litDrops = VOTERS.filter(v => v.canvassStatus === 'Literature Dropped').length;
+            const regAssisted = VOTERS.filter(v => v.registrationAssisted !== null).length;
+            const ballotFollowUps = VOTERS.filter(v => v.ballotStatus === 'Outstanding' || v.ballotStatus === 'Ballot Mailed')
+                .length;
+            const territoryCompleted = Math.round(doorsAttempted / total * 100);
+            return `
+                        <div class="page-head"><div><div class="page-title">Field Operations</div><div class="page-sub">Canvassing data bank · Street-level tracking</div></div></div>
+                        <div class="grid grid-3">
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters in Database</span></div><div class="kpi-value" style="font-size:20px">${fmt(total)}</div></div>
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Doors Attempted</span></div><div class="kpi-value" style="font-size:20px">${fmt(doorsAttempted)}</div></div>
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Territory Completed</span></div><div class="kpi-value" style="font-size:20px">${territoryCompleted}%</div></div>
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Voters Contacted</span></div><div class="kpi-value" style="font-size:20px">${fmt(contacted)}</div></div>
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Literature Drops</span></div><div class="kpi-value" style="font-size:20px">${fmt(litDrops)}</div></div>
+                            <div class="card kpi-card"><div class="kpi-top"><span class="kpi-label">Registrations Assisted</span></div><div class="kpi-value" style="font-size:20px">${fmt(regAssisted)}</div></div>
+                        </div>
+                        <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Street-Level Tracking</span><span class="badge badge-blue">${STREETS.length} streets</span></div><div class="card-pad">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                                ${STREETS.map(s=>{
+                                    const voters = VOTERS.filter(v=>v.street===s);
+                                    const totalS = voters.length;
+                                    const completed = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
+                                    const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
+                                    const pending = totalS - completed;
+                                    return `<div class="household-card">
+                                        <div style="display:flex;justify-content:space-between"><strong>${s}</strong><span class="badge badge-${completed===totalS?'green':completed>0?'amber':'gray'}">${completed}/${totalS}</span></div>
+                                        <div class="small muted">${spoke} spoke · ${pending} pending</div>
+                                        <div class="progress" style="margin-top:4px"><div style="width:${totalS?Math.round(completed/totalS*100):0}%"></div></div>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div></div>
+                        <div class="card" style="margin-top:14px"><div class="card-head"><span class="card-title">Canvasser Productivity</span></div><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Assigned</th><th>Attempted</th><th>Spoke</th><th>Lit Drops</th><th>No Answer</th><th>Reg Assist</th></tr></thead><tbody>
+                            ${WORKERS.filter(w=>w.role==='Canvasser').slice(0,8).map(w=>{
+                                const voters = VOTERS.filter(v=>v.assignedWorker===w.name);
+                                const assigned = voters.length;
+                                const attempted = voters.filter(v=>v.canvassStatus!=='Not Visited').length;
+                                const spoke = voters.filter(v=>v.canvassStatus==='Spoke With Voter'||v.canvassStatus==='Completed').length;
+                                const lit = voters.filter(v=>v.canvassStatus==='Literature Dropped').length;
+                                const noAns = voters.filter(v=>v.canvassStatus==='No Answer').length;
+                                const reg = voters.filter(v=>v.registrationAssisted!==null).length;
+                                return `<tr><td><strong>${w.name}</strong></td><td>${assigned}</td><td>${attempted}</td><td>${spoke}</td><td>${lit}</td><td>${noAns}</td><td>${reg}</td></tr>`;
+                            }).join('')}
+                        </tbody></table></div></div>
+                    `;
+        }
+
+        // ===== SETTINGS =====
+        function renderSettings() {
+            return `<div class="page-head"><div><div class="page-title">Settings</div><div class="page-sub">Campaign configuration and automation rules</div></div></div>
+                        <div class="grid grid-2">
+                            <div class="card card-pad"><div class="card-title">Automation Rules</div>
+                                <div style="margin-top:12px">
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Ballot Chase Queue (10+ days)</span><span class="badge badge-green">Enabled</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Registration Follow-Up</span><span class="badge badge-green">Enabled</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Voter-Says-Returned Reconciliation</span><span class="badge badge-green">Enabled</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Stale Contact Re-Queue (21+ days)</span><span class="badge badge-amber">Disabled</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0"><span>DNC Suppression</span><span class="badge badge-green">Enabled</span></div>
+                                </div>
+                            </div>
+                            <div class="card card-pad"><div class="card-title">Security & Access</div>
+                                <div style="margin-top:12px">
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>MFA Required</span><span class="badge badge-green">Enabled</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Session Timeout</span><span>30 minutes</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)"><span>Audit Logging</span><span class="badge badge-green">Active</span></div>
+                                    <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Data Encryption</span><span class="badge badge-green">AES-256</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card card-pad" style="margin-top:14px"><div class="card-title">Quick Actions</div>
+                            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                                <button class="btn btn-secondary" onclick="toast('Export all data')">${ic('download')} Export Database</button>
+                                <button class="btn btn-secondary" onclick="toast('Backup initiated')">${ic('clock')} Backup Now</button>
+                                <button class="btn btn-danger" onclick="if(confirm('Reset all demo data?')){location.reload()}">${ic('trash')} Reset Demo Data</button>
+                            </div>
+                        </div>`;
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        // The app starts with login screen visible, app hidden
+        // Login will show the app
+        console.log('ReturnVote platform ready - Login to begin');
+    </script>
 </body>
 </html>
